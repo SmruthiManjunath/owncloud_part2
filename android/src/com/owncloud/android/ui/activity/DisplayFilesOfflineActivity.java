@@ -29,6 +29,7 @@ public class DisplayFilesOfflineActivity extends Activity {
 
     // adapter;
     ListView fileviews;
+    FileAdapter adapter;
     String TAG="ownCloudFileDisplayActivity";
     Toast toast;
     @Override
@@ -59,9 +60,9 @@ public class DisplayFilesOfflineActivity extends Activity {
         toast.makeText(this,"Unable to open file, not recognized ",Toast.LENGTH_SHORT);
         Log.d("eijworeewq ",fileviews+" ");
         //Log.d("wqejqw ",owncloudFiles.length+" ");
-        //adapter = new FileArrayAdapter(this,android.R.layout.simple_list_item_1,fileArrayList);
-        ArrayAdapter<String> adapter1 = new ArrayAdapter<String>(this, R.layout.local_file_display,fileArrayList);
-        fileviews.setAdapter(adapter1);
+        adapter = new FileAdapter(this,R.layout.local_file_display,fileArrayList,1);
+        //ArrayAdapter<String> adapter1 = new ArrayAdapter<String>(this, R.layout.local_file_display,fileArrayList,1);
+        fileviews.setAdapter(adapter);
         Log.d("ewqweuqeeweq ",fileArrayList.size()+" ");
         fileviews.setOnItemClickListener(onFileClick);
         //Log.d("qweeowqor ",adapter.getItem(0));
@@ -113,43 +114,50 @@ public class DisplayFilesOfflineActivity extends Activity {
         };
     }
 
-class fileAdapter extends ArrayAdapter<String> {
+class FileAdapter extends ArrayAdapter<String> {
     ArrayList<String> fileList;
     Context context;
+    int layoutResourceId;
+    RowView rowView;
     Map<String,Integer> fileMimeImageMap;
-    public fileAdapter(Context context, int textViewResourceId, ArrayList<String> objects) {
-        super(context, textViewResourceId, objects);
+    public FileAdapter(Context context, int layoutResourceId, ArrayList<String> objects,int i) {
+        super(context, layoutResourceId, objects);
         this.context = context;
+        this.layoutResourceId= layoutResourceId;
         this.fileList = objects;
         fileMimeImageMap = new HashMap<String,Integer>();
-        fileMimeImageMap.put("txt", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("docx", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("odt", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("html", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("pdf", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("csv", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("xml", R.drawable.local_file_indicator);
-        fileMimeImageMap.put("jpeg",R.drawable.owncloud_logo_small_white);
-        fileMimeImageMap.put("jpg",R.drawable.owncloud_logo_small_white);
-        fileMimeImageMap.put("png",R.drawable.owncloud_logo_small_white);
-        fileMimeImageMap.put("gif",R.drawable.owncloud_logo_small_white);
-        fileMimeImageMap.put("bmp",R.drawable.owncloud_logo_small_white);
+        fileMimeImageMap.put("txt", R.drawable.text_file);
+        fileMimeImageMap.put("docx", R.drawable.text_file);
+        fileMimeImageMap.put("odt", R.drawable.text_file);
+        fileMimeImageMap.put("html", R.drawable.text_file);
+        fileMimeImageMap.put("pdf", R.drawable.text_file);
+        fileMimeImageMap.put("csv", R.drawable.text_file);
+        fileMimeImageMap.put("xml", R.drawable.text_file);
+        fileMimeImageMap.put("jpeg",R.drawable.camera_icon);
+        fileMimeImageMap.put("jpg",R.drawable.camera_icon);
+        fileMimeImageMap.put("png",R.drawable.camera_icon);
+        fileMimeImageMap.put("gif",R.drawable.camera_icon);
+        fileMimeImageMap.put("bmp",R.drawable.camera_icon);
         fileMimeImageMap.put("mp3",R.drawable.music);
         fileMimeImageMap.put("wav",R.drawable.music);
         fileMimeImageMap.put("ogg",R.drawable.music);
         fileMimeImageMap.put("mid",R.drawable.music);
         fileMimeImageMap.put("midi",R.drawable.music);
         fileMimeImageMap.put("amr",R.drawable.music);
-        fileMimeImageMap.put("mpeg",R.drawable.arrow_left);
-        fileMimeImageMap.put("3gp",R.drawable.arrow_left);
+        fileMimeImageMap.put("mpeg",R.drawable.video);
+        fileMimeImageMap.put("3gp",R.drawable.video);
         
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View view = inflater.inflate(R.layout.local_file_display, parent,false);
-        RowView rowView = new RowView();
+        
+        View view = convertView;
+        
+        if(view == null) {
+        LayoutInflater inflater = ((Activity) context).getLayoutInflater();
+        view = inflater.inflate(layoutResourceId,parent, false);
+        rowView = new RowView();
         rowView.text = (TextView) view.findViewById(R.id.file_name);
         rowView.image = (ImageView) view.findViewById(R.id.file_type);
         rowView.text.setText(fileList.get(position));
@@ -159,6 +167,8 @@ class fileAdapter extends ArrayAdapter<String> {
             rowView.image.setImageResource(fileMimeImageMap.get(Extension));
         else
             rowView.image.setImageResource(R.drawable.folder);
+            view.setTag(rowView);
+        }
         
         return view;
         

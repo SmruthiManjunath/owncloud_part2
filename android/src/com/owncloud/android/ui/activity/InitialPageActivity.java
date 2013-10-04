@@ -60,5 +60,10 @@ public class InitialPageActivity extends Activity {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo == null?false:true;
     }
+    @Override
+    public
+    void onBackPressed() {
+        finish();
+    }
     
 }
