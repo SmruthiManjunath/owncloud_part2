@@ -601,11 +601,13 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
 
     @Override
     public void onBackPressed() {
+        Intent intent = new Intent(this,InitialPageActivity.class);
         OCFileListFragment listOfFiles = getListOfFilesFragment(); 
         if (mDualPane || getSecondFragment() == null) {
             if (listOfFiles != null) {  // should never be null, indeed
                 if (mDirectories.getCount() <= 1) {
-                    finish();
+                    //finish();
+                   startActivity(intent);
                     return;
                 }
                 popDirname();
