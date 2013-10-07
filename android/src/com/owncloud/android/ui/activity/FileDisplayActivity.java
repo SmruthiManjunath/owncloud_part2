@@ -19,6 +19,7 @@
 package com.owncloud.android.ui.activity;
 
 import java.io.File;
+import java.util.List;
 
 import android.accounts.Account;
 import android.app.AlertDialog;
@@ -62,6 +63,7 @@ import com.actionbarsherlock.view.Window;
 import com.owncloud.android.Log_OC;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountAuthenticator;
+import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
@@ -70,6 +72,7 @@ import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileObserverService;
 import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
+import com.owncloud.android.operations.CreateAndUploadFile;
 import com.owncloud.android.operations.CreateFolderOperation;
 import com.owncloud.android.operations.OnRemoteOperationListener;
 import com.owncloud.android.operations.RemoteOperation;
@@ -78,6 +81,7 @@ import com.owncloud.android.operations.RemoteOperationResult.ResultCode;
 import com.owncloud.android.operations.RemoveFileOperation;
 import com.owncloud.android.operations.RenameFileOperation;
 import com.owncloud.android.operations.SynchronizeFileOperation;
+import com.owncloud.android.providers.FileContentProvider;
 import com.owncloud.android.syncadapter.FileSyncService;
 import com.owncloud.android.ui.dialog.EditNameDialog;
 import com.owncloud.android.ui.dialog.EditNameDialog.EditNameDialogListener;
@@ -143,14 +147,6 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         //Log.d(TAG,"called first");
         
         
-        if(isNetworkAvailable()) {
-            Toast.makeText(this, "Filedsisplay Connected to the internet", Toast.LENGTH_LONG).show();
-        } else {
-            //b1.setEnabled(false);
-            Toast.makeText(this, "FileDisplay Activity No internet connection available ", Toast.LENGTH_SHORT).show();
-            
-        }
-        
         super.onCreate(savedInstanceState); // this calls onAccountChanged() when ownCloud Account is valid
         //requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         Intent intent = new Intent(this,InitialPageActivity.class);
@@ -199,12 +195,8 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         
         Log_OC.d(TAG, "onCreate() end");
     }
-
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo == null?false:true;
-    } 
+    
+    
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -468,6 +460,16 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
             startActivity(settingsIntent);
             break;
         }
+        case R.id.action_create_file: {
+            Intent intent = new Intent(this,CreateAndUploadFile.class);
+            OCFile f1 = getCurrentDir();
+            intent.putExtra("remotePath", f1.getRemotePath());
+            CreateAndUploadFile cr = new CreateAndUploadFile();
+            cr.createFile(f1.getRemotePath());
+            //Log.d(TAG+" current directory location found ",f1.getRemotePath());
+            //startActivity(intent);
+            break;
+        }
         case android.R.id.home: {
             FileFragment second = getSecondFragment();
             OCFile currentDir = getCurrentDir();
@@ -490,6 +492,7 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         ContentResolver.requestSync(
                 getAccount(),
                 AccountAuthenticator.AUTHORITY, bundle);
+        
     }
 
 
@@ -601,13 +604,14 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
 
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent(this,InitialPageActivity.class);
+        //Intent intent = new Intent(this,InitialPageActivity.class);
+        //startActivity(intent);
         OCFileListFragment listOfFiles = getListOfFilesFragment(); 
         if (mDualPane || getSecondFragment() == null) {
             if (listOfFiles != null) {  // should never be null, indeed
                 if (mDirectories.getCount() <= 1) {
-                    //finish();
-                   startActivity(intent);
+                    finish();
+                   //startActivity(intent);
                     return;
                 }
                 popDirname();

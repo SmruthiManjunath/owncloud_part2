@@ -27,158 +27,183 @@ import com.owncloud.android.R;
 
 public class DisplayFilesOfflineActivity extends Activity {
 
-    // adapter;
     ListView fileviews;
     FileAdapter adapter;
-    String TAG="ownCloudFileDisplayActivity";
+    String TAG = "ownCloudFileDisplayActivity";
     Toast toast;
+    File owncloudDirectory;
+    File[] owncloudFiles;
+    Map<String, String> fileNamePath;
+    ArrayList<String> fileArrayList;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout)
         setContentView(R.layout.listfiles);
-        ListView fileviews = (ListView)findViewById(R.id.filelist);
+        ListView fileviews = (ListView) findViewById(R.id.filelist);
 
-        File owncloudDirectory = new File(Environment.getExternalStorageDirectory(),"ownCloud/moment@Macha@128.111.52.151/shared");
-        File[] owncloudFiles = owncloudDirectory.listFiles();
-        ArrayList<String> fileArrayList = new ArrayList<String>();
-        
-        for(int i = 0;i < owncloudFiles.length;i++) {
+        owncloudDirectory = new File(Environment.getExternalStorageDirectory(),
+                "ownCloud/moment@Macha@128.111.52.151/shared");
+        owncloudFiles = owncloudDirectory.listFiles();
+        fileArrayList = new ArrayList<String>();
+        fileNamePath = new HashMap<String, String>();
+        for (int i = 0; i < owncloudFiles.length; i++) {
 
             fileArrayList.add(owncloudFiles[i].getName());
+            fileNamePath.put(owncloudFiles[i].getName(), owncloudFiles[i].getAbsolutePath());
+
         }
-        /*try {
-            getAssets().open("/sdcard/ownCloud/"+owncloudFiles[1].getName(), 0);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }*/
-        /*Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.parse("file:///sdcard/ownCloud/batt_angry.txt"), "text/plain");
-        startActivity(intent);*/
-        toast = new Toast(this);
-        toast.makeText(this,"Unable to open file, not recognized ",Toast.LENGTH_SHORT);
-        Log.d("eijworeewq ",fileviews+" ");
-        //Log.d("wqejqw ",owncloudFiles.length+" ");
-        adapter = new FileAdapter(this,R.layout.local_file_display,fileArrayList,1);
-        //ArrayAdapter<String> adapter1 = new ArrayAdapter<String>(this, R.layout.local_file_display,fileArrayList,1);
+        adapter = new FileAdapter(this, R.layout.local_file_display, fileArrayList);
         fileviews.setAdapter(adapter);
-        Log.d("ewqweuqeeweq ",fileArrayList.size()+" ");
         fileviews.setOnItemClickListener(onFileClick);
-        //Log.d("qweeowqor ",adapter.getItem(0));
-        fileviews.setVisibility(View.VISIBLE);
-
-
 
     }
-
 
     private OnItemClickListener onFileClick = new OnItemClickListener() {
 
         @Override
-        public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-                long arg3) {
+        public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 
-            //Log.d("wqeqeqwewqewqewqwqr ",arg0.)
-            //File selectedFile = arg0.getItemAtPosition(arg2);
-            String[] file = ((String)arg0.getItemAtPosition(arg2)).split("\\.");
-            String Extension = file[file.length-1];
-            //String Extension = MimeTypeMap.getFileExtensionFromUrl((String)arg0.getItemAtPosition(arg2));
-            String type = null;
-            /*if(Extension!=null) {
-                MimeTypeMap typeMap = MimeTypeMap.getSingleton();
-                type = typeMap.getMimeTypeFromExtension(Extension);
-            }*/
-                
-                Log.d(TAG,Extension+" "+type+" "+((String)arg0.getItemAtPosition(arg2)));
-                Log.d(TAG,Extension);
-                //type = "audio/mp3";
-                if(Extension.equals("jpeg") || Extension.equals("bmp")|| Extension.equals("gif")||Extension.equals("jpg")||Extension.equals("png"))
-                {
-                    type = "image/"+Extension;
-                } else if(Extension.equals("mpeg") || Extension.equals("ogg") || Extension.equals("mp3") || Extension.equals("mp4"))
-                    type = "audio/"+Extension;
-                else if(Extension.equals("avi"))
-                    type="video/"+Extension; 
+            String fileName = ((String) arg0.getItemAtPosition(arg2));
+            File file1 = new File(owncloudDirectory, fileName);
+            File list[];
+            if (!file1.isFile()) {
+                owncloudDirectory = new File(owncloudDirectory, fileName);
+                list = owncloudDirectory.listFiles();
+                fileArrayList.clear();
+                for (int i = 0; i < list.length; i++) {
+                    fileArrayList.add(list[i].getName());
+                }
+                adapter.notifyDataSetChanged();
+            } else {
+                String[] file = ((String) arg0.getItemAtPosition(arg2)).split("\\.");
+                String Extension = file[file.length - 1];
+
+                int start = owncloudDirectory.getPath().indexOf("ownCloud");
+                String Path = "file:///sdcard/" + owncloudDirectory.getPath().substring(start) + "/" + fileName;
+                Log.d(TAG, Path);
+                String type = null;
+                if (Extension.equals("jpeg") || Extension.equals("bmp") || Extension.equals("gif")
+                        || Extension.equals("jpg") || Extension.equals("png")) {
+                    if (Extension.equals("jpg")) {
+                        type = "image/jpeg";
+                    } else
+                        type = "image/" + Extension;
+                } else if (Extension.equals("mpeg") || Extension.equals("ogg") || Extension.equals("mp3")
+                        || Extension.equals("mp4"))
+                    type = "audio/" + Extension;
+                else if (Extension.equals("avi"))
+                    type = "video/" + Extension;
+                else if(Extension.equals("pdf") || Extension.equals("odt"))
+                    type = "application/pdf";
                 else
-                    type="text/plain";
-                
-                if(type != null) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(Uri.parse("file:///sdcard/ownCloud/moment@Macha@128.111.52.151/shared/"+(String)arg0.getItemAtPosition(arg2)), type);
-                startActivity(intent);
-                } 
+                    type = "text/plain";
+
+                if (type != null) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.parse(Path), type);
+                    startActivity(intent);
+                }
 
             }
 
-        };
-    }
+        }
+    };
 
-class FileAdapter extends ArrayAdapter<String> {
-    ArrayList<String> fileList;
-    Context context;
-    int layoutResourceId;
-    RowView rowView;
-    Map<String,Integer> fileMimeImageMap;
-    public FileAdapter(Context context, int layoutResourceId, ArrayList<String> objects,int i) {
-        super(context, layoutResourceId, objects);
-        this.context = context;
-        this.layoutResourceId= layoutResourceId;
-        this.fileList = objects;
-        fileMimeImageMap = new HashMap<String,Integer>();
-        fileMimeImageMap.put("txt", R.drawable.text_file);
-        fileMimeImageMap.put("docx", R.drawable.text_file);
-        fileMimeImageMap.put("odt", R.drawable.text_file);
-        fileMimeImageMap.put("html", R.drawable.text_file);
-        fileMimeImageMap.put("pdf", R.drawable.text_file);
-        fileMimeImageMap.put("csv", R.drawable.text_file);
-        fileMimeImageMap.put("xml", R.drawable.text_file);
-        fileMimeImageMap.put("jpeg",R.drawable.camera_icon);
-        fileMimeImageMap.put("jpg",R.drawable.camera_icon);
-        fileMimeImageMap.put("png",R.drawable.camera_icon);
-        fileMimeImageMap.put("gif",R.drawable.camera_icon);
-        fileMimeImageMap.put("bmp",R.drawable.camera_icon);
-        fileMimeImageMap.put("mp3",R.drawable.music);
-        fileMimeImageMap.put("wav",R.drawable.music);
-        fileMimeImageMap.put("ogg",R.drawable.music);
-        fileMimeImageMap.put("mid",R.drawable.music);
-        fileMimeImageMap.put("midi",R.drawable.music);
-        fileMimeImageMap.put("amr",R.drawable.music);
-        fileMimeImageMap.put("mpeg",R.drawable.video);
-        fileMimeImageMap.put("3gp",R.drawable.video);
-        
+    protected void notifyDataChanged() {
+        adapter.notifyDataSetChanged();
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        
-        View view = convertView;
-        
-        if(view == null) {
-        LayoutInflater inflater = ((Activity) context).getLayoutInflater();
-        view = inflater.inflate(layoutResourceId,parent, false);
-        rowView = new RowView();
-        rowView.text = (TextView) view.findViewById(R.id.file_name);
-        rowView.image = (ImageView) view.findViewById(R.id.file_type);
-        rowView.text.setText(fileList.get(position));
-        String[] file = (fileList.get(position)).split("\\.");
-        String Extension = file[file.length-1];
-        if(fileMimeImageMap.containsKey(Extension))
-            rowView.image.setImageResource(fileMimeImageMap.get(Extension));
-        else
-            rowView.image.setImageResource(R.drawable.folder);
-            view.setTag(rowView);
+    public void onBackPressed() {
+        String parent = owncloudDirectory.getParent().toString();
+        String[] paths = owncloudDirectory.toString().split("/");
+        if((!paths[paths.length-1].equals("shared"))) {
+        owncloudDirectory = new File(parent);
+        File list[] = owncloudDirectory.listFiles();
+        fileArrayList.clear();
+        Log.d(TAG, "length of list " + list.length + " ");
+        for (int i = 0; i < list.length; i++) {
+            fileArrayList.add(list[i].getName());
         }
         
-        return view;
-        
+        adapter.notifyDataSetChanged();
+        }else
+        {
+            finish();
+        }
     }
-    
-    static class RowView {
-        TextView text;
-        ImageView image;
+
+    class FileAdapter extends ArrayAdapter<String> {
+        ArrayList<String> fileList;
+        Context context;
+        int layoutResourceId;
+        RowView rowView;
+        Map<String, Integer> fileMimeImageMap;
+
+        public FileAdapter(Context context, int layoutResourceId, ArrayList<String> fileArrayList) {
+            super(context, layoutResourceId, fileArrayList);
+            this.context = context;
+            this.layoutResourceId = layoutResourceId;
+            this.fileList = fileArrayList;
+            fileMimeImageMap = new HashMap<String, Integer>();
+            fileMimeImageMap.put("txt", R.drawable.file_doc);
+            fileMimeImageMap.put("docx", R.drawable.file_doc);
+            fileMimeImageMap.put("odt", R.drawable.file_pdf);
+            fileMimeImageMap.put("html", R.drawable.file);
+            fileMimeImageMap.put("pdf", R.drawable.file_pdf);
+            fileMimeImageMap.put("csv", R.drawable.file);
+            fileMimeImageMap.put("xml", R.drawable.file);
+            fileMimeImageMap.put("jpeg", R.drawable.file_image);
+            fileMimeImageMap.put("jpg", R.drawable.file_image);
+            fileMimeImageMap.put("png", R.drawable.file_image);
+            fileMimeImageMap.put("gif", R.drawable.file_image);
+            fileMimeImageMap.put("bmp", R.drawable.file_image);
+            fileMimeImageMap.put("mp3", R.drawable.file_sound);
+            fileMimeImageMap.put("wav", R.drawable.file_sound);
+            fileMimeImageMap.put("ogg", R.drawable.file_sound);
+            fileMimeImageMap.put("mid", R.drawable.file_sound);
+            fileMimeImageMap.put("midi", R.drawable.file_sound);
+            fileMimeImageMap.put("amr", R.drawable.file_sound);
+            fileMimeImageMap.put("mpeg", R.drawable.file_movie);
+            fileMimeImageMap.put("3gp", R.drawable.file_movie);
+            fileMimeImageMap.put("dir", R.drawable.folder);
+            // fileMimeImageMap.put(arg0, arg1)
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+
+            View view = convertView;
+            if (view == null) {
+                LayoutInflater inflater = ((Activity) context).getLayoutInflater();
+                view = inflater.inflate(layoutResourceId, parent, false);
+                rowView = new RowView();
+                rowView.text = (TextView) view.findViewById(R.id.file_name);
+                rowView.image = (ImageView) view.findViewById(R.id.file_type);
+
+                view.setTag(rowView);
+            } else
+                rowView = (RowView) view.getTag();
+
+            String[] file = (fileList.get(position)).split("\\.");
+            rowView.text.setText(fileList.get(position));
+            String Extension = file[file.length - 1];
+            if (fileMimeImageMap.containsKey(Extension))
+                rowView.image.setImageResource(fileMimeImageMap.get(Extension));
+            else if (!new File(owncloudDirectory, fileList.get(position)).isFile())
+                rowView.image.setImageResource(fileMimeImageMap.get("dir"));
+            else
+                rowView.image.setImageResource(R.drawable.file);
+
+            return view;
+
+        }
+
+        protected class RowView {
+            TextView text;
+            ImageView image;
+        }
+
     }
-    
-    
-    
 }

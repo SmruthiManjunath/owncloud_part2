@@ -150,7 +150,7 @@
         <service android:name=".files.services.FileDownloader" />
         <service android:name=".files.services.FileUploader" />
         <service android:name=".media.MediaService" />
-        
+        <service android:name=".files.services.instantDownloadSharedFilesService" />
         <activity android:name=".ui.activity.PinCodeActivity" />
         <activity android:name=".extensions.ExtensionsAvailableActivity"></activity>
         <activity android:name=".extensions.ExtensionsListActivity"></activity>

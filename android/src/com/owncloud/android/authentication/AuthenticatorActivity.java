@@ -179,14 +179,6 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         
-        if(isNetworkAvailable()) {
-            Toast.makeText(this, "Connected to the internet", Toast.LENGTH_SHORT).show();
-        } else {
-           // b1.setEnabled(false);
-            Toast.makeText(this, "No internet connection available ", Toast.LENGTH_SHORT).show();
-            
-        }
-        /// set view and get references to view elements
         setContentView(R.layout.account_setup);
         mAuthMessage = (TextView) findViewById(R.id.auth_message);
         mHostUrlInput = (EditText) findViewById(R.id.hostUrlInput);
@@ -383,12 +375,6 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         });
     }
     
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo == null?false:true;
-    }
-
     private void initAuthorizationMethod() {
         boolean oAuthRequired = false;
         boolean samlWebSsoRequired = false;
