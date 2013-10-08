@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.accounts.Account;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -24,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.owncloud.android.R;
+import com.owncloud.android.authentication.AccountUtils;
 
 public class DisplayFilesOfflineActivity extends Activity {
 
@@ -33,24 +35,28 @@ public class DisplayFilesOfflineActivity extends Activity {
     Toast toast;
     File owncloudDirectory;
     File[] owncloudFiles;
-    Map<String, String> fileNamePath;
     ArrayList<String> fileArrayList;
+    Account account;
+    String folder;
+    boolean isShared;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.listfiles);
-        ListView fileviews = (ListView) findViewById(R.id.filelist);
 
-        owncloudDirectory = new File(Environment.getExternalStorageDirectory(),
-                "ownCloud/moment@Macha@128.111.52.151/shared");
+        setContentView(R.layout.listfiles);
+        Bundle bundle = this.getIntent().getExtras();
+        folder = bundle.getString("folder");
+        isShared = bundle.getBoolean("isShared");
+        ListView fileviews = (ListView) findViewById(R.id.filelist);
+        account = AccountUtils.getCurrentOwnCloudAccount(this);
+        owncloudDirectory = new File(Environment.getExternalStorageDirectory(), "ownCloud/" + account.name + "/"
+                + folder);
         owncloudFiles = owncloudDirectory.listFiles();
         fileArrayList = new ArrayList<String>();
-        fileNamePath = new HashMap<String, String>();
         for (int i = 0; i < owncloudFiles.length; i++) {
-
-            fileArrayList.add(owncloudFiles[i].getName());
-            fileNamePath.put(owncloudFiles[i].getName(), owncloudFiles[i].getAbsolutePath());
+            if (!(!isShared && !owncloudFiles[i].isFile() && owncloudFiles[i].getName().equals("Shared")))
+                fileArrayList.add(owncloudFiles[i].getName());
 
         }
         adapter = new FileAdapter(this, R.layout.local_file_display, fileArrayList);
@@ -67,6 +73,7 @@ public class DisplayFilesOfflineActivity extends Activity {
             String fileName = ((String) arg0.getItemAtPosition(arg2));
             File file1 = new File(owncloudDirectory, fileName);
             File list[];
+
             if (!file1.isFile()) {
                 owncloudDirectory = new File(owncloudDirectory, fileName);
                 list = owncloudDirectory.listFiles();
@@ -94,7 +101,7 @@ public class DisplayFilesOfflineActivity extends Activity {
                     type = "audio/" + Extension;
                 else if (Extension.equals("avi"))
                     type = "video/" + Extension;
-                else if(Extension.equals("pdf") || Extension.equals("odt"))
+                else if (Extension.equals("pdf") || Extension.equals("odt"))
                     type = "application/pdf";
                 else
                     type = "text/plain";
@@ -118,18 +125,16 @@ public class DisplayFilesOfflineActivity extends Activity {
     public void onBackPressed() {
         String parent = owncloudDirectory.getParent().toString();
         String[] paths = owncloudDirectory.toString().split("/");
-        if((!paths[paths.length-1].equals("shared"))) {
-        owncloudDirectory = new File(parent);
-        File list[] = owncloudDirectory.listFiles();
-        fileArrayList.clear();
-        Log.d(TAG, "length of list " + list.length + " ");
-        for (int i = 0; i < list.length; i++) {
-            fileArrayList.add(list[i].getName());
-        }
-        
-        adapter.notifyDataSetChanged();
-        }else
-        {
+        if (((!paths[paths.length - 1].equals("shared")) && isShared)
+                || ((!paths[paths.length - 1].equals(account.name)) && !isShared)) {
+            owncloudDirectory = new File(parent);
+            File list[] = owncloudDirectory.listFiles();
+            fileArrayList.clear();
+            for (int i = 0; i < list.length; i++) {
+                fileArrayList.add(list[i].getName());
+            }
+            adapter.notifyDataSetChanged();
+        } else {
             finish();
         }
     }
@@ -168,7 +173,6 @@ public class DisplayFilesOfflineActivity extends Activity {
             fileMimeImageMap.put("mpeg", R.drawable.file_movie);
             fileMimeImageMap.put("3gp", R.drawable.file_movie);
             fileMimeImageMap.put("dir", R.drawable.folder);
-            // fileMimeImageMap.put(arg0, arg1)
         }
 
         @Override

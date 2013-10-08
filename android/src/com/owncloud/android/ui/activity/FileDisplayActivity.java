@@ -19,7 +19,9 @@
 package com.owncloud.android.ui.activity;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import android.accounts.Account;
 import android.app.AlertDialog;
@@ -44,6 +46,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.sax.RootElement;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
@@ -83,6 +86,7 @@ import com.owncloud.android.operations.RenameFileOperation;
 import com.owncloud.android.operations.SynchronizeFileOperation;
 import com.owncloud.android.providers.FileContentProvider;
 import com.owncloud.android.syncadapter.FileSyncService;
+import com.owncloud.android.ui.adapter.FileListListAdapter;
 import com.owncloud.android.ui.dialog.EditNameDialog;
 import com.owncloud.android.ui.dialog.EditNameDialog.EditNameDialogListener;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
@@ -461,11 +465,12 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
             break;
         }
         case R.id.action_create_file: {
-            Intent intent = new Intent(this,CreateAndUploadFile.class);
+            /*Intent intent = new Intent(this,CreateAndUploadFile.class);
             OCFile f1 = getCurrentDir();
             intent.putExtra("remotePath", f1.getRemotePath());
             CreateAndUploadFile cr = new CreateAndUploadFile();
-            cr.createFile(f1.getRemotePath());
+            cr.createFile(f1.getRemotePath());*/
+            instantDownloadFile();
             //Log.d(TAG+" current directory location found ",f1.getRemotePath());
             //startActivity(intent);
             break;
@@ -493,9 +498,51 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
                 getAccount(),
                 AccountAuthenticator.AUTHORITY, bundle);
         
+        
     }
 
-
+    private void instantDownloadFile() {
+        startSynchronization();
+        //FileListListAdapter f1 = new FileListListAdapter(this, transferServiceGetter);
+        //int numofFiles = f1.getCount();
+        
+        DataStorageManager strgmanager = getStorageManager();
+        //OCFile f = new OCFile("/");
+        //OCFile id = strgmanager.getFileById(strgmanager.ROOT_PARENT_ID);
+        OCFile id = strgmanager.getFileByPath("/");
+        Log.d("********************* ",id.getFileName()+" "+id.getRemotePath()+" "+id.getStoragePath());
+        Vector<OCFile> fil = strgmanager.getDirectoryContent(id);
+        Log.d("********************* ",fil.size()+" "+strgmanager.ROOT_PARENT_ID);
+        List<OCFile> f1 = new ArrayList<OCFile>();
+        //getFiles(f1)
+        for(int i = 0;i<fil.size();i++) {
+            if(fil.get(i).isDirectory()) {
+                getFiles(fil.get(i), f1);
+            }
+            else if(!fil.get(i).isDown()) {
+                f1.add(fil.get(i));
+            } 
+            Log.d(TAG,fil.get(i).getFileName()+" "+fil.get(i).getRemotePath()+" "+fil.get(i).getStoragePath());
+        }
+        Log.d(TAG,"************************************ ");
+        for(int i = 0;i<f1.size();i++) {
+            //Log.d(TAG,f1.get(i).getFileName()+" "+f1.get(i).isDown()+f1.get(i).isDirectory());
+            mWaitingToPreview = f1.get(i);
+            requestForDownload();
+        }
+        
+    }
+    
+    private void getFiles(OCFile f1,List<OCFile> f2) {
+        Vector<OCFile> list = getStorageManager().getDirectoryContent(f1);
+        for(int i = 0;i<list.size();i++) {
+            if(list.get(i).isDirectory()) {
+                getFiles(list.get(i), f2);
+            } else if(!list.get(i).isDown()) {
+                f2.add(list.get(i));
+            }
+        }
+    }
     @Override
     public boolean onNavigationItemSelected(int itemPosition, long itemId) {
         int i = itemPosition;
@@ -1340,6 +1387,7 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
             Intent i = new Intent(this, FileDownloader.class);
             i.putExtra(FileDownloader.EXTRA_ACCOUNT, account);
             i.putExtra(FileDownloader.EXTRA_FILE, mWaitingToPreview);
+            Log.d("############################ ",mWaitingToPreview.getFileName());
             startService(i);
         }
     }
