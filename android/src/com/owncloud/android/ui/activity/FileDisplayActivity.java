@@ -20,12 +20,15 @@ package com.owncloud.android.ui.activity;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Vector;
 
 import android.accounts.Account;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -38,22 +41,18 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.sax.RootElement;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,11 +61,9 @@ import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.Window;
 import com.owncloud.android.Log_OC;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountAuthenticator;
-import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
@@ -75,7 +72,7 @@ import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileObserverService;
 import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
-import com.owncloud.android.operations.CreateAndUploadFile;
+import com.owncloud.android.files.services.instantDownloadSharedFilesService;
 import com.owncloud.android.operations.CreateFolderOperation;
 import com.owncloud.android.operations.OnRemoteOperationListener;
 import com.owncloud.android.operations.RemoteOperation;
@@ -84,9 +81,7 @@ import com.owncloud.android.operations.RemoteOperationResult.ResultCode;
 import com.owncloud.android.operations.RemoveFileOperation;
 import com.owncloud.android.operations.RenameFileOperation;
 import com.owncloud.android.operations.SynchronizeFileOperation;
-import com.owncloud.android.providers.FileContentProvider;
 import com.owncloud.android.syncadapter.FileSyncService;
-import com.owncloud.android.ui.adapter.FileListListAdapter;
 import com.owncloud.android.ui.dialog.EditNameDialog;
 import com.owncloud.android.ui.dialog.EditNameDialog.EditNameDialogListener;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
@@ -158,6 +153,9 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         mHandler = new Handler();
 
         /// bindings to transference services
+        
+        
+        
         mUploadConnection = new ListServiceConnection(); 
         mDownloadConnection = new ListServiceConnection();
         bindService(new Intent(this, FileUploader.class), mUploadConnection, Context.BIND_AUTO_CREATE);
@@ -470,7 +468,7 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
             intent.putExtra("remotePath", f1.getRemotePath());
             CreateAndUploadFile cr = new CreateAndUploadFile();
             cr.createFile(f1.getRemotePath());*/
-            instantDownloadFile();
+            //instantDownloadFile();
             //Log.d(TAG+" current directory location found ",f1.getRemotePath());
             //startActivity(intent);
             break;
@@ -501,23 +499,19 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         
     }
 
-    private void instantDownloadFile() {
+    public void instantDownloadFile(DataStorageManager strgmanager) {
         startSynchronization();
-        //FileListListAdapter f1 = new FileListListAdapter(this, transferServiceGetter);
-        //int numofFiles = f1.getCount();
-        
-        DataStorageManager strgmanager = getStorageManager();
-        //OCFile f = new OCFile("/");
-        //OCFile id = strgmanager.getFileById(strgmanager.ROOT_PARENT_ID);
+        //DataStorageManager strgmanager = getStorageManager();
+        //Log.d(TAG,strgmanager.toString());
+        if(strgmanager != null) {
         OCFile id = strgmanager.getFileByPath("/");
         Log.d("********************* ",id.getFileName()+" "+id.getRemotePath()+" "+id.getStoragePath());
         Vector<OCFile> fil = strgmanager.getDirectoryContent(id);
         Log.d("********************* ",fil.size()+" "+strgmanager.ROOT_PARENT_ID);
         List<OCFile> f1 = new ArrayList<OCFile>();
-        //getFiles(f1)
         for(int i = 0;i<fil.size();i++) {
             if(fil.get(i).isDirectory()) {
-                getFiles(fil.get(i), f1);
+                getFiles(fil.get(i), f1,strgmanager);
             }
             else if(!fil.get(i).isDown()) {
                 f1.add(fil.get(i));
@@ -526,18 +520,18 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         }
         Log.d(TAG,"************************************ ");
         for(int i = 0;i<f1.size();i++) {
-            //Log.d(TAG,f1.get(i).getFileName()+" "+f1.get(i).isDown()+f1.get(i).isDirectory());
             mWaitingToPreview = f1.get(i);
             requestForDownload();
+        }
         }
         
     }
     
-    private void getFiles(OCFile f1,List<OCFile> f2) {
-        Vector<OCFile> list = getStorageManager().getDirectoryContent(f1);
+    private void getFiles(OCFile f1,List<OCFile> f2,DataStorageManager strgmanager) {
+        Vector<OCFile> list = strgmanager.getDirectoryContent(f1);
         for(int i = 0;i<list.size();i++) {
             if(list.get(i).isDirectory()) {
-                getFiles(list.get(i), f2);
+                getFiles(list.get(i), f2,strgmanager);
             } else if(!list.get(i).isDown()) {
                 f2.add(list.get(i));
             }

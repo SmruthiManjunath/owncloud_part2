@@ -127,11 +127,14 @@ public class DisplayFilesOfflineActivity extends Activity {
         String[] paths = owncloudDirectory.toString().split("/");
         if (((!paths[paths.length - 1].equals("shared")) && isShared)
                 || ((!paths[paths.length - 1].equals(account.name)) && !isShared)) {
+            
             owncloudDirectory = new File(parent);
             File list[] = owncloudDirectory.listFiles();
             fileArrayList.clear();
             for (int i = 0; i < list.length; i++) {
+                if(!(!isShared && list[i].getName().equals("Shared"))) {
                 fileArrayList.add(list[i].getName());
+                }
             }
             adapter.notifyDataSetChanged();
         } else {

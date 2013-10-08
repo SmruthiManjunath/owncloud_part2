@@ -1,6 +1,10 @@
 package com.owncloud.android.ui.activity;
 
+import java.util.Calendar;
+
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -85,7 +89,11 @@ public class InitialPageActivity extends Activity {
          * 60*1000, pintent);
          */
         // startService(intent);
-
+        Intent intent2 = new Intent(this,instantDownloadSharedFilesService.class); 
+        AlarmManager alarm = (AlarmManager)getSystemService(ALARM_SERVICE); 
+        PendingIntent pintent = PendingIntent.getService(this, 0,intent2, 0); 
+        Calendar cal = Calendar.getInstance();
+        //alarm.setRepeating(AlarmManager.RTC_WAKEUP,cal.getTimeInMillis(),60*1000, pintent);
         Log.d(TAG, "Service started");
     }
 

@@ -12,6 +12,7 @@ import com.owncloud.android.operations.RemoteOperationResult;
 import com.owncloud.android.operations.SynchronizeFolderOperation;
 import com.owncloud.android.syncadapter.AbstractOwnCloudSyncAdapter;
 import com.owncloud.android.syncadapter.FileSyncAdapter;
+import com.owncloud.android.ui.activity.FileDisplayActivity;
 import com.owncloud.android.ui.activity.InitialPageActivity;
 
 import eu.alefzero.webdav.WebdavClient;
@@ -37,7 +38,7 @@ public class instantDownloadSharedFilesService extends IntentService{
     @Override
     protected void onHandleIntent(Intent intent) {
         
-        int parentId = DataStorageManager.ROOT_PARENT_ID;
+        /*int parentId = DataStorageManager.ROOT_PARENT_ID;
         String remotePath = OCFile.PATH_SEPARATOR+"Shared/";
         //AbstractOwnCloudSyncAdapter adp = new A;
         Account account = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
@@ -61,8 +62,14 @@ public class instantDownloadSharedFilesService extends IntentService{
     //Log.d(TAG,result.getHttpCode()+" ");
     if(result.isSuccess()) {
         
-    }
-        } catch (OperationCanceledException e) {
+    }*/
+        Account account = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
+        DataStorageManager datastoragemanager = new FileDataStorageManager(account, getContentResolver());
+        if(account!=null) {
+        FileDisplayActivity f1 = new FileDisplayActivity();
+        f1.instantDownloadFile(datastoragemanager);
+        }
+        /*} catch (OperationCanceledException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (AuthenticatorException e) {
@@ -74,7 +81,7 @@ public class instantDownloadSharedFilesService extends IntentService{
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
         //publishResults(result.getHttpCode());
     }
     private void publishResults(int result) {
