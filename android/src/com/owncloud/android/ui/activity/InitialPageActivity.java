@@ -1,10 +1,12 @@
 package com.owncloud.android.ui.activity;
 
+import java.util.Calendar;
+
 import android.app.Activity;
-import android.content.BroadcastReceiver;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -18,23 +20,11 @@ import com.owncloud.android.R;
 import com.owncloud.android.files.services.instantDownloadSharedFilesService;
 
 public class InitialPageActivity extends Activity {
-    String TAG = "Initial page activity";
+    String TAG = InitialPageActivity.class.getName();
     Toast toast;
     Button viewSharedFilesButton;
     Button viewMyFilesButton;
     Button ownCloudFilesButton;
-    static int i = 0;
-    private BroadcastReceiver receiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle bundle = intent.getExtras();
-            if (bundle != null) {
-                int resultCode = bundle.getInt(instantDownloadSharedFilesService.RESULT);
-                Log.d(TAG, resultCode + " ");
-            }
-        }
-    };
 
     @Override
     public void onCreate(Bundle savedInstance) {
@@ -56,6 +46,7 @@ public class InitialPageActivity extends Activity {
                 }
             }
         });
+        
         final Intent intent1 = new Intent(this, DisplayFilesOfflineActivity.class);
         viewSharedFilesButton.setOnClickListener(new OnClickListener() {
 
@@ -75,30 +66,14 @@ public class InitialPageActivity extends Activity {
                 startActivity(intent1);
             }
         });
-        /*
-         * Intent intent = new
-         * Intent(this,instantDownloadSharedFilesService.class); AlarmManager
-         * alarm = (AlarmManager)getSystemService(ALARM_SERVICE); PendingIntent
-         * pintent = PendingIntent.getService(InitialPageActivity.this, 0,
-         * intent, 0); Calendar cal = Calendar.getInstance();
-         * alarm.setRepeating(AlarmManager.RTC_WAKEUP,cal.getTimeInMillis(),
-         * 60*1000, pintent);
-         */
-        // startService(intent);
+
+        Intent intent = new Intent(this, instantDownloadSharedFilesService.class);
+        AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+        PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
+        Calendar cal = Calendar.getInstance();
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 5 * 60 * 1000, pintent);
 
         Log.d(TAG, "Service started");
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        registerReceiver(receiver, new IntentFilter(instantDownloadSharedFilesService.NOTIFICATION));
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        unregisterReceiver(receiver);
     }
 
     private boolean isNetworkAvailable() {
@@ -109,7 +84,6 @@ public class InitialPageActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-
     }
 
 }
