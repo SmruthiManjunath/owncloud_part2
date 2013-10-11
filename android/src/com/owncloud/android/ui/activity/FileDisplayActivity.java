@@ -19,6 +19,11 @@
 package com.owncloud.android.ui.activity;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -39,12 +44,14 @@ import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.text.Editable;
@@ -54,6 +61,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -68,6 +76,7 @@ import com.actionbarsherlock.view.MenuItem;
 import com.owncloud.android.Log_OC;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountAuthenticator;
+import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
@@ -86,15 +95,18 @@ import com.owncloud.android.operations.RenameFileOperation;
 import com.owncloud.android.operations.SynchronizeFileOperation;
 import com.owncloud.android.syncadapter.FileSyncService;
 import com.owncloud.android.ui.dialog.EditNameDialog;
+import com.owncloud.android.ui.dialog.IndeterminateProgressDialog;
 import com.owncloud.android.ui.dialog.EditNameDialog.EditNameDialogListener;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog.OnSslValidatorListener;
+import com.owncloud.android.ui.fragment.ConfirmationDialogFragment;
 import com.owncloud.android.ui.fragment.FileDetailFragment;
 import com.owncloud.android.ui.fragment.FileFragment;
 import com.owncloud.android.ui.fragment.OCFileListFragment;
 import com.owncloud.android.ui.preview.PreviewImageActivity;
 import com.owncloud.android.ui.preview.PreviewMediaFragment;
 import com.owncloud.android.ui.preview.PreviewVideoActivity;
+import com.owncloud.android.utils.FileStorageUtils;
 
 /**
  * Displays, what files the user has available in his ownCloud.
@@ -142,7 +154,12 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
 
     private OCFile mWaitingToPreview;
     private Handler mHandler;
-    private Spinner spn;
+    
+    public static final String EXTRA_CHOSEN_FILES = UploadFilesActivity.class.getCanonicalName() + ".EXTRA_CHOSEN_FILES";      
+    private String uri;
+    private String value;
+
+    List<String> todisplay;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log_OC.d(TAG, "onCreate() start");
@@ -447,6 +464,7 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
     public boolean onOptionsItemSelected(MenuItem item) {
         boolean retval = true;
         final ArrayAdapter<String> adapter;
+        //final String uri;
         switch (item.getItemId()) {
         case R.id.action_create_dir: {
             EditNameDialog dialog = EditNameDialog.newInstance(getString(R.string.uploader_info_dirname), "", -1, -1, this);
@@ -478,17 +496,23 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle("Create new file ");
             alert.setMessage("Please enter the name of the file ");
+            
             LayoutInflater factor = LayoutInflater.from(getApplicationContext());
             final View deleteDialogView = factor.inflate(
                     R.layout.select_folder_dialog_spinner, null);
             //alert.setContentView(R.layout.select_folder_dialog_spinner);
             alert.setView(deleteDialogView);
             final EditText edittext = (EditText)deleteDialogView.findViewById(R.id.filename);
+            final String currentDir = getCurrentDir().getRemotePath();
+            final AlertDialog.Builder uploadFile = new AlertDialog.Builder(this);
             
+                
+                
             //edittext.setHint("filename");
-            spn = (Spinner) deleteDialogView.findViewById(R.id.foldersDisplay);
-            List<String> todisplay  = new ArrayList<String>(); 
-            File owncloudDirectory = new File(Environment.getExternalStorageDirectory(),"ownCloud/moment@Macha@128.111.52.151/");
+            /*spn = (Spinner) deleteDialogView.findViewById(R.id.foldersDisplay);
+            
+            todisplay  = new ArrayList<String>(); 
+            owncloudDirectory = new File(Environment.getExternalStorageDirectory(),"ownCloud/moment@Macha@128.111.52.151/");
             File[] listfiles = owncloudDirectory.listFiles();
             for(int i = 0;i<listfiles.length;i++) {
                 if(!listfiles[i].isFile()) {
@@ -496,30 +520,59 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
                    
                 }
             }
+            todisplay.add("Owncloud");
             Log.d(TAG, todisplay.size()+" "+todisplay.get(0)+this.toString());
             //adapter = new ArrayAdapter<String>()
             adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item,todisplay);
             //adapter.addAll(todisplay);
             Log.d(TAG,adapter.getCount()+" "+adapter.getItem(0)+" "+spn);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_text);
             spn.setAdapter(adapter);
-            /*spn.setOnItemSelectedListener(new OnItemSelectedListener() {
+            spn.post(new Runnable() {
+                public void run() {
+                    spn.setOnItemSelectedListener(new OnItemSelectedListener() {
 
-                @Override
-                public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-                    
-                    
+                        @Override
+                        public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+                            String filename = (String) arg0.getItemAtPosition(arg2);
+                             owncloudDirectory= new File(owncloudDirectory,filename);
+                             if(!owncloudDirectory.isFile()) {
+                            Log.d(TAG,"file selected "+filename);
+                            todisplay.clear();
+                            File[] filestofolder = owncloudDirectory.listFiles();
+                            for(int i = 0;i<filestofolder.length;i++) {
+                                if(!filestofolder[i].isFile()) {
+                                    todisplay.add(filestofolder[i].getName());
+                                }
+                            }
+                            
+                            adapter.notifyDataSetChanged();
+                            
+                            
+                             }
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> arg0) {
+                            // TODO Auto-generated method stub
+                            
+                        }
+                        
+                    });
                 }
-                
             });*/
+            
             //final ArrayAdapter<String> adapter;
+            Log.d(TAG,getCurrentDir().getRemotePath());
             alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    String value = edittext.getText().toString();
-                    String str = (String) spn.getSelectedItem();
-                    Log.d(TAG, "you entre "+str+" "+value);
+                    value = edittext.getText().toString();
+                    //String str = (String) spn.getSelectedItem();
+                    Account account = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
+                    
+                    //Log.d(TAG, "you entre "+str+" "+value);
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     String[] fspl = value.toString().split("\\.");
                     if(fspl.length == 1) {
@@ -527,13 +580,52 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
                     } else if(!fspl[fspl.length-1].equals("txt")){
                         value = value+".txt";
                     }
-                    String uri = "file:///sdcard/ownCloud/moment@Macha@128.111.52.151/"+str+"/"+value;
-                    intent.setType("text/plain");
-                    startActivity(intent);
+                    uri = "file:///sdcard/ownCloud/moment@Macha@128.111.52.151"+currentDir+value;
+                    final File f1 = new File(Environment.getExternalStorageDirectory(),"ownCloud/" + account.name + currentDir+value);
                     
+                    try {
+                        FileOutputStream f12 = new FileOutputStream(f1);
+                        try {
+                            f12.close();
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    } catch (FileNotFoundException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    Log.d(TAG,uri);
+                    intent.setDataAndType(Uri.parse(uri), "text/plain");
+                    startActivityForResult(intent,1);
+                    
+                    uploadFile.setTitle("Upload File");
+                    uploadFile.setMessage("Do you want to upload the file you created? ");
+                    uploadFile.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        
+                        Log.d(TAG,getAccount()+" "+uri+" "+currentDir+" ");
+                        Intent in = new Intent(getBaseContext(), FileUploader.class);
+                        //Intent i = new Intent(currentDir, null, getApplicationContext(), FileUploader.class);
+                        in.putExtra(FileUploader.KEY_ACCOUNT, getAccount());
+                        in.putExtra(FileUploader.KEY_LOCAL_FILE,f1.getAbsolutePath() );
+                        in.putExtra(FileUploader.KEY_REMOTE_FILE, currentDir+value);
+                        //in.putExtra(FileUploader.KEY_MIME_TYPE, "text/plain");
+                        in.putExtra(FileUploader.KEY_UPLOAD_TYPE, FileUploader.UPLOAD_SINGLE_FILE);
+                        startService(in);
+                        
+                    }
+                });
+                uploadFile.setNegativeButton("ON", new DialogInterface.OnClickListener() {
+                    
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        
+                    }
+                });
+                
                     Log.d(TAG, "you entre "+value);
-                    //spn.on
-                    //adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item,todisplay);
                 }
             });
             alert.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
@@ -574,6 +666,7 @@ OCFileListFragment.ContainerActivity, FileDetailFragment.ContainerActivity, OnNa
         
     }
 
+    
     public void instantDownloadFile(DataStorageManager strgmanager) {
         startSynchronization();
         //DataStorageManager strgmanager = getStorageManager();

@@ -1,6 +1,12 @@
 package com.owncloud.android.ui.activity;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Calendar;
+
+import org.apache.commons.httpclient.HttpURL;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -52,7 +58,8 @@ public class InitialPageActivity extends Activity {
         ownCloudFilesButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isNetworkAvailable()) {
+                Log.d(TAG,"getting invoked"+isNetworkAvailable(getApplicationContext()));
+                if (isNetworkAvailable(getApplicationContext())) {
                     finish();
                 } else {
                     Toast.makeText(InitialPageActivity.this, "Please connect to the Internet", Toast.LENGTH_SHORT)
@@ -109,12 +116,22 @@ public class InitialPageActivity extends Activity {
         unregisterReceiver(receiver);
     }
 
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo == null ? false : true;
+    private boolean isNetworkAvailable(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager != null) {
+            NetworkInfo info = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+            if(info.getState() == NetworkInfo.State.CONNECTED)
+                return true;
+            else
+                return false;
+        }
+        return false;
+        /*NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        Log.d(TAG,activeNetworkInfo.isConnected()+" ");
+        return activeNetworkInfo != null && activeNetworkInfo.isAvailable() && activeNetworkInfo.isConnectedOrConnecting();*/
     }
 
+    
     @Override
     public void onBackPressed() {
 
