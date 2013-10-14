@@ -2,6 +2,7 @@ package com.owncloud.android.files.services;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.util.Log;
 
 import com.owncloud.android.authentication.AccountUtils;
 
@@ -20,10 +21,12 @@ public class instantDownloadSharedFilesService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Intent instantDownloadIntent = new Intent("instantdownloadreceiver");
+        Intent instantDownloadIntent = new Intent(NOTIFICATION);
         instantDownloadIntent.putExtra("message", "data");
+        Log.d(TAG,"message"+"*************** ");
         if(AccountUtils.getCurrentOwnCloudAccount(getApplicationContext()) != null) {
-        sendBroadcast(instantDownloadIntent);
+            Log.d(TAG," ************************* "+AccountUtils.getCurrentOwnCloudAccount(getApplicationContext()).name);
+            sendBroadcast(instantDownloadIntent);
         }
     }
 }

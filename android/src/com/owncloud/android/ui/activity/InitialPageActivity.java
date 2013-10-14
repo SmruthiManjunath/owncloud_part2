@@ -1,10 +1,12 @@
 package com.owncloud.android.ui.activity;
 
+import java.util.Calendar;
+
 import android.app.Activity;
-import android.content.BroadcastReceiver;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;

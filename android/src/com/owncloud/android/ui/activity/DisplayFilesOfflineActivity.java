@@ -57,7 +57,6 @@ public class DisplayFilesOfflineActivity extends Activity {
         for (int i = 0; i < owncloudFiles.length; i++) {
             if (!(!isShared && !owncloudFiles[i].isFile() && owncloudFiles[i].getName().equals("Shared")))
                 fileArrayList.add(owncloudFiles[i].getName());
-
         }
         adapter = new FileAdapter(this, R.layout.local_file_display, fileArrayList);
         fileviews.setAdapter(adapter);
@@ -85,7 +84,7 @@ public class DisplayFilesOfflineActivity extends Activity {
             } else {
                 String[] file = ((String) arg0.getItemAtPosition(arg2)).split("\\.");
                 String Extension = file[file.length - 1];
-
+                 
                 int start = owncloudDirectory.getPath().indexOf("ownCloud");
                 String Path = "file:///sdcard/" + owncloudDirectory.getPath().substring(start) + "/" + fileName;
                 Log.d(TAG, Path);
@@ -133,6 +132,7 @@ public class DisplayFilesOfflineActivity extends Activity {
             for (int i = 0; i < list.length; i++) {
                 if(!(!isShared && list[i].getName().equals("Shared"))) {
                     fileArrayList.add(list[i].getName());
+                    //list[i].
                     }
             }
             adapter.notifyDataSetChanged();
@@ -187,7 +187,7 @@ public class DisplayFilesOfflineActivity extends Activity {
                 rowView = new RowView();
                 rowView.text = (TextView) view.findViewById(R.id.file_name);
                 rowView.image = (ImageView) view.findViewById(R.id.file_type);
-
+                rowView.downloadedfile = (ImageView)view.findViewById(R.id.file_downloaded);
                 view.setTag(rowView);
             } else
                 rowView = (RowView) view.getTag();
@@ -201,7 +201,7 @@ public class DisplayFilesOfflineActivity extends Activity {
                 rowView.image.setImageResource(fileMimeImageMap.get("dir"));
             else
                 rowView.image.setImageResource(R.drawable.file);
-
+            //if (!new File(owncloudDirectory, fileList.get(position)))
             return view;
 
         }
@@ -209,6 +209,7 @@ public class DisplayFilesOfflineActivity extends Activity {
         protected class RowView {
             TextView text;
             ImageView image;
+            ImageView downloadedfile;
         }
 
     }

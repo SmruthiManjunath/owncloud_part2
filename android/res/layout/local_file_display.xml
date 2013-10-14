@@ -11,5 +11,9 @@
       android:layout_height="wrap_content"
       android:id="@+id/file_name"
       android:layout_toRightOf="@+id/file_type" />
-
+<ImageView android:layout_width="40dp"
+       android:layout_height="50dp"
+      android:id="@+id/file_downloaded"
+      android:layout_alignParentLeft="true"
+      />
 </RelativeLayout>

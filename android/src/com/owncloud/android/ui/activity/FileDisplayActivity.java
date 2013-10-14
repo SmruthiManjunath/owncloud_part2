@@ -19,13 +19,20 @@
 package com.owncloud.android.ui.activity;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import android.accounts.Account;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -41,7 +48,9 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -49,16 +58,20 @@ import android.provider.MediaStore;
 import android.sax.RootElement;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
+import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
@@ -75,6 +88,7 @@ import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileObserverService;
 import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
+import com.owncloud.android.files.services.instantDownloadSharedFilesService;
 import com.owncloud.android.operations.CreateAndUploadFile;
 import com.owncloud.android.operations.CreateFolderOperation;
 import com.owncloud.android.operations.OnRemoteOperationListener;
@@ -149,7 +163,14 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     private OCFile mWaitingToPreview;
     private Handler mHandler;
+    
+    public static final String EXTRA_CHOSEN_FILES = UploadFilesActivity.class.getCanonicalName() + ".EXTRA_CHOSEN_FILES";
+    private String uri;
+    private String value;
+    List<String> todisplay;
 
+    private NotificationCompat.Builder shareNotifier;
+    NotificationManager notificationManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log_OC.d(TAG, "onCreate() start");
@@ -167,7 +188,17 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         mDownloadConnection = new ListServiceConnection();
         bindService(new Intent(this, FileUploader.class), mUploadConnection, Context.BIND_AUTO_CREATE);
         bindService(new Intent(this, FileDownloader.class), mDownloadConnection, Context.BIND_AUTO_CREATE);
-
+        shareNotifier = new NotificationCompat.Builder(this)
+        .setContentTitle("File Shared")
+        .setSmallIcon(R.drawable.icon);
+       
+        Intent fileShareIntent = new Intent(this,FileDisplayActivity.class);
+        PendingIntent pIntent = PendingIntent.getActivity(this, 0, fileShareIntent, 0);
+        shareNotifier .setContentIntent(pIntent);
+        shareNotifier.setAutoCancel(true);
+        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        //ContentResolver.setIsSyncable(getAccount(), AccountAuthenticator.AUTHORITY, 1);
+        //ContentResolver.setSyncAutomatically(getAccount(), AccountAuthenticator.AUTHORITY,true);
         // broadcast receiver that is called by the service which downloads the
         // files to the phone
         instantdownloadreceiver = new BroadcastReceiver() {
@@ -177,6 +208,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 String message = intent.getStringExtra("message");
                 Log.d("receiver", "Got message: " + message);
                 instantDownloadFile();
+                //unregisterReceiver(instantdownloadreceiver);
             }
         };
 
@@ -225,7 +257,16 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             unbindService(mDownloadConnection);
         if (mUploadConnection != null)
             unbindService(mUploadConnection);
+        unregisterReceiver(instantdownloadreceiver);
     }
+    /*@Override
+    protected void onStop() {
+        super.onStop();
+        if(instantdownloadreceiver != null) {
+            unregisterReceiver(instantdownloadreceiver);
+            instantdownloadreceiver = null;
+        }
+    }*/
 
 
     /**
@@ -482,14 +523,63 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             break;
         }
         case R.id.action_create_file: {
-            /*Intent intent = new Intent(this,CreateAndUploadFile.class);
-            OCFile f1 = getCurrentDir();
-            intent.putExtra("remotePath", f1.getRemotePath());
-            CreateAndUploadFile cr = new CreateAndUploadFile();
-            cr.createFile(f1.getRemotePath());*/
-            instantDownloadFile();
-            //Log.d(TAG+" current directory location found ",f1.getRemotePath());
-            //startActivity(intent);
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setTitle("Create new file ");
+            alert.setMessage("Please enter the name of the file ");
+
+            LayoutInflater factor = LayoutInflater.from(getApplicationContext());
+            final View deleteDialogView = factor.inflate(
+                    R.layout.enter_filename_dialog, null);
+            //alert.setContentView(R.layout.select_folder_dialog_spinner);
+            alert.setView(deleteDialogView);
+            final EditText edittext = (EditText)deleteDialogView.findViewById(R.id.filename);
+            final String currentDir = getCurrentDir().getRemotePath();
+            Log.d(TAG,getCurrentDir().getRemotePath());
+            alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    value = edittext.getText().toString();
+                    //String str = (String) spn.getSelectedItem();
+                    Account account = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
+
+                    //Log.d(TAG, "you entre "+str+" "+value);
+                    int flag = 0;
+                    String[] fspl = value.toString().split("\\.");
+                    String taskInput;
+                    if(fspl.length == 1) {
+                        value = value+".txt";
+                    } else if(!fspl[fspl.length-1].equals("txt")){
+                        value = value+".txt";
+                    }
+                    uri = "file:///sdcard/ownCloud/"+account.name+currentDir+value;
+                    final File f1 = new File(Environment.getExternalStorageDirectory(),"ownCloud/" + account.name + currentDir+value);
+                        try {
+                            if(f1.createNewFile()) {
+                                Intent intent = new Intent(Intent.ACTION_EDIT);
+                                intent.setDataAndType(Uri.parse(uri), "text/plain");
+                                startActivity(intent);
+                            }
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        taskInput = f1.getAbsolutePath()+"#"+currentDir+value;
+                        new displayFileTask(taskInput).execute();
+                    Log.d(TAG, "you entre "+value);
+                }
+            });
+            alert.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+
+                }
+            });
+            alert.show();
+
+
             break;
         }
         case android.R.id.home: {
@@ -506,6 +596,71 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
         return retval;
     }
+   /* @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        //Tab i = getSupportActionBar().getTabAt(0);
+        CharSequence str = getSupportActionBar().getSubtitle();
+        return mDualPane;
+        
+    }*/
+    private class displayFileTask extends AsyncTask<Void,Void,Integer> {
+        final AlertDialog.Builder uploadFile = new AlertDialog.Builder(FileDisplayActivity.this);
+        String path;
+        String currentDirectory;
+        public displayFileTask(String str) {
+            super();
+            String[] values = str.split("#");
+            path = values[0];
+            currentDirectory = values[1];
+        }
+        @Override
+        protected void onPreExecute() {
+
+        }
+        @Override
+        protected Integer doInBackground(Void... arg0) {
+            /*try {
+                wait(1000);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }*/
+            Log.d("********************************** ","background");
+           return 1;
+        }
+        @Override
+        protected void onPostExecute(Integer args) {
+            if(args == 1) {
+            uploadFile.setTitle("Upload File");
+            uploadFile.setMessage("Do you want to upload the file you created? ");
+            uploadFile.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                //Log.d(TAG,getAccount()+" "+uri+" "+currentDir+" ");
+                Intent in = new Intent(getBaseContext(), FileUploader.class);
+                //Intent i = new Intent(currentDir, null, getApplicationContext(), FileUploader.class);
+                in.putExtra(FileUploader.KEY_ACCOUNT, getAccount());
+                in.putExtra(FileUploader.KEY_LOCAL_FILE,path );
+                in.putExtra(FileUploader.KEY_REMOTE_FILE, currentDirectory);
+                //in.putExtra(FileUploader.KEY_MIME_TYPE, "text/plain");
+                in.putExtra(FileUploader.KEY_UPLOAD_TYPE, FileUploader.UPLOAD_SINGLE_FILE);
+                startService(in);
+
+            }
+        });
+            uploadFile.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+                uploadFile.show();
+            }
+            }
+
+        }
 
     private void startSynchronization() {
         ContentResolver.cancelSync(null, AccountAuthenticator.AUTHORITY);   // cancel the current synchronizations of any ownCloud account
@@ -520,32 +675,49 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     public void instantDownloadFile() {
         startSynchronization();
+        //
+        //ContentResolver.
         DataStorageManager strgmanager = getStorageManager();
-
+        if(strgmanager != null) {
         OCFile parent = strgmanager.getFileByPath("/");
         Vector<OCFile> filesInFolder = strgmanager.getDirectoryContent(parent);
         List<OCFile> filesToDownload = new ArrayList<OCFile>();
+        int sharedIndicator = 0;
         for (int i = 0; i < filesInFolder.size(); i++) {
             if (filesInFolder.get(i).isDirectory()) {
-                getFilesinFoldersToDownload(filesInFolder.get(i), filesToDownload);
+                if(filesInFolder.get(i).getFileName().equals("Shared"))
+                    sharedIndicator = 1;
+                getFilesinFoldersToDownload(filesInFolder.get(i), filesToDownload,sharedIndicator);
+                    sharedIndicator = 0;
             } else if (!filesInFolder.get(i).isDown()) {
                 filesToDownload.add(filesInFolder.get(i));
+                
+            } else if(!filesInFolder.get(i).isDirectory() && filesInFolder.get(i).getLocalModificationTimestamp() < filesInFolder.get(i).getModificationTimestamp()) {
+                filesToDownload.add(filesInFolder.get(i));
             }
-           
         }
+        
         for (int i = 0; i < filesToDownload.size(); i++) {
             mWaitingToPreview = filesToDownload.get(i);
             requestForDownload();
+            for(int j = 0;j<10000;j++);
+        }
         }
         
     }
 
-    private void getFilesinFoldersToDownload(OCFile parentDirectory, List<OCFile> filesToDownload) {
+    private void getFilesinFoldersToDownload(OCFile parentDirectory, List<OCFile> filesToDownload,int sharedIndicator) {
         Vector<OCFile> list = getStorageManager().getDirectoryContent(parentDirectory);
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).isDirectory()) {
-                getFilesinFoldersToDownload(list.get(i), filesToDownload);
+                getFilesinFoldersToDownload(list.get(i), filesToDownload,sharedIndicator);
             } else if (!list.get(i).isDown()) {
+                if(sharedIndicator == 1) {
+                    shareNotifier.setContentText("File "+list.get(i).getFileName()+" was shared with you ");
+                    notificationManager.notify(0, shareNotifier.build());
+                }
+                filesToDownload.add(list.get(i));
+            }else if(!list.get(i).isDirectory() && list.get(i).getLocalModificationTimestamp() < list.get(i).getModificationTimestamp()) {
                 filesToDownload.add(list.get(i));
             }
         }
@@ -658,14 +830,14 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     @Override
     public void onBackPressed() {
-        //Intent intent = new Intent(this,InitialPageActivity.class);
+        Intent intent = new Intent(this,InitialPageActivity.class);
         //startActivity(intent);
         OCFileListFragment listOfFiles = getListOfFilesFragment(); 
         if (mDualPane || getSecondFragment() == null) {
             if (listOfFiles != null) {  // should never be null, indeed
                 if (mDirectories.getCount() <= 1) {
-                    finish();
-                   //startActivity(intent);
+                    //finish();
+                   startActivity(intent);
                     return;
                 }
                 popDirname();
@@ -707,7 +879,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         downloadIntentFilter.addAction(FileDownloader.DOWNLOAD_FINISH_MESSAGE);
         mDownloadFinishReceiver = new DownloadFinishReceiver();
         registerReceiver(mDownloadFinishReceiver, downloadIntentFilter);
-    
+        registerReceiver(instantdownloadreceiver, new IntentFilter(instantDownloadSharedFilesService.NOTIFICATION));
         Log_OC.d(TAG, "onResume() end");
     }
 
@@ -728,7 +900,10 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             unregisterReceiver(mDownloadFinishReceiver);
             mDownloadFinishReceiver = null;
         }
-
+        /*if(instantdownloadreceiver != null) {
+            unregisterReceiver(instantdownloadreceiver);
+            instantdownloadreceiver = null;
+        }*/
         Log_OC.d(TAG, "onPause() end");
     }
 
@@ -842,6 +1017,14 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         return null;
     }
 
+    /*public class fileDownloadReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("message");
+            Log.d("receiver", "Got message: " + message);
+            instantDownloadFile();
+        }
+    }*/
     /**
      * Pushes a directory to the drop down list
      * @param directory to push
@@ -1395,11 +1578,10 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             i.putExtra(FileDownloader.EXTRA_ACCOUNT, account);
             i.putExtra(FileDownloader.EXTRA_FILE, mWaitingToPreview);
             Log.d("############################ ",mWaitingToPreview.getFileName());
-            startService(i);
         }
     }
 
-
+    
     private OCFile getCurrentDir() {
         OCFile file = getFile();
         if (file != null) {
