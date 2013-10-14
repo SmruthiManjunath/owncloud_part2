@@ -100,7 +100,7 @@ public class InitialPageActivity extends Activity {
         AlarmManager alarm = (AlarmManager)getSystemService(ALARM_SERVICE); 
         PendingIntent pintent = PendingIntent.getService(this, 0,intent2, 0); 
         Calendar cal = Calendar.getInstance();
-        //alarm.setRepeating(AlarmManager.RTC_WAKEUP,cal.getTimeInMillis(),60*1000, pintent);
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP,cal.getTimeInMillis(),60*1000, pintent);
         Log.d(TAG, "Service started");
     }
 
