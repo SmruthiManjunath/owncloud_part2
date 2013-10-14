@@ -1,12 +1,6 @@
 package com.owncloud.android.ui.activity;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Calendar;
-
-import org.apache.commons.httpclient.HttpURL;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -44,8 +38,7 @@ public class InitialPageActivity extends Activity {
         ownCloudFilesButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG,"getting invoked"+isNetworkAvailable(getApplicationContext()));
-                if (isNetworkAvailable(getApplicationContext())) {
+                if (isNetworkAvailable()) {
                     finish();
                 } else {
                     Toast.makeText(InitialPageActivity.this, "Please connect to the Internet", Toast.LENGTH_SHORT)
@@ -73,41 +66,37 @@ public class InitialPageActivity extends Activity {
                 startActivity(intent1);
             }
         });
+<<<<<<< HEAD
 
         Intent intent = new Intent(this, instantDownloadSharedFilesService.class);
         AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
         PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
         Calendar cal = Calendar.getInstance();
-<<<<<<< HEAD
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 5 * 60 * 1000, pintent);
+=======
+>>>>>>> master
+
+        Intent intent = new Intent(this, instantDownloadSharedFilesService.class);
+        AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+        PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
+        Calendar cal = Calendar.getInstance();
         alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 5 * 60 * 1000, pintent);
 
+<<<<<<< HEAD
+
 =======
-        alarm.setRepeating(AlarmManager.RTC_WAKEUP,cal.getTimeInMillis(),60*1000, pintent);
->>>>>>> bf49874d1285ec95545221698de276b3f3096650
         Log.d(TAG, "Service started");
     }
+>>>>>>> master
 
-
-
-    private boolean isNetworkAvailable(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if(connectivityManager != null) {
-            NetworkInfo info = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-            if(info.getState() == NetworkInfo.State.CONNECTED)
-                return true;
-            else
-                return false;
-        }
-        return false;
-        /*NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        Log.d(TAG,activeNetworkInfo.isConnected()+" ");
-        return activeNetworkInfo != null && activeNetworkInfo.isAvailable() && activeNetworkInfo.isConnectedOrConnecting();*/
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo == null ? false : true;
     }
 
-    
     @Override
     public void onBackPressed() {
-
     }
 
 }

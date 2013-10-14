@@ -76,8 +76,6 @@ public class InitialPageActivity extends Activity {
         Log.d(TAG, "Service started");
     }
 
-
-
     private boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();

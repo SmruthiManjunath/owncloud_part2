@@ -691,14 +691,14 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
         
     }
-    
-    private void getFiles(OCFile f1,List<OCFile> f2,DataStorageManager strgmanager) {
-        Vector<OCFile> list = strgmanager.getDirectoryContent(f1);
-        for(int i = 0;i<list.size();i++) {
-            if(list.get(i).isDirectory()) {
-                getFiles(list.get(i), f2,strgmanager);
-            } else if(!list.get(i).isDown()) {
-                f2.add(list.get(i));
+
+    private void getFilesinFoldersToDownload(OCFile parentDirectory, List<OCFile> filesToDownload) {
+        Vector<OCFile> list = getStorageManager().getDirectoryContent(parentDirectory);
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).isDirectory()) {
+                getFilesinFoldersToDownload(list.get(i), filesToDownload);
+            } else if (!list.get(i).isDown()) {
+                filesToDownload.add(list.get(i));
             }
         }
     }
@@ -810,7 +810,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     @Override
     public void onBackPressed() {
-        //Intent intent = new Intent(this,InitialPageActivity.class);
+        Intent intent = new Intent(this,InitialPageActivity.class);
         //startActivity(intent);
         OCFileListFragment listOfFiles = getListOfFilesFragment(); 
         if (mDualPane || getSecondFragment() == null) {
@@ -996,6 +996,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     /**
      * Pushes a directory to the drop down list
+     * 
      * @param directory to push
      * @throws IllegalArgumentException If the {@link OCFile#isDirectory()} returns false.
      */
@@ -1009,6 +1010,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     /**
      * Pops a directory name from the drop down list
+     * 
      * @return True, unless the stack is empty
      */
     public boolean popDirname() {
