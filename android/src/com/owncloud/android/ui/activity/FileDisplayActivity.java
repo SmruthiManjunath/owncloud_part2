@@ -25,10 +25,7 @@ import java.util.List;
 import java.util.Vector;
 
 import android.accounts.Account;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -55,10 +52,10 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.sax.RootElement;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.NotificationCompat;
+import android.text.Editable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -102,15 +99,18 @@ import com.owncloud.android.providers.FileContentProvider;
 import com.owncloud.android.syncadapter.FileSyncService;
 import com.owncloud.android.ui.adapter.FileListListAdapter;
 import com.owncloud.android.ui.dialog.EditNameDialog;
+import com.owncloud.android.ui.dialog.IndeterminateProgressDialog;
 import com.owncloud.android.ui.dialog.EditNameDialog.EditNameDialogListener;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog.OnSslValidatorListener;
+import com.owncloud.android.ui.fragment.ConfirmationDialogFragment;
 import com.owncloud.android.ui.fragment.FileDetailFragment;
 import com.owncloud.android.ui.fragment.FileFragment;
 import com.owncloud.android.ui.fragment.OCFileListFragment;
 import com.owncloud.android.ui.preview.PreviewImageActivity;
 import com.owncloud.android.ui.preview.PreviewMediaFragment;
 import com.owncloud.android.ui.preview.PreviewVideoActivity;
+import com.owncloud.android.utils.FileStorageUtils;
 
 /**
  * Displays, what files the user has available in his ownCloud.
@@ -259,14 +259,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             unbindService(mUploadConnection);
         unregisterReceiver(instantdownloadreceiver);
     }
-    /*@Override
-    protected void onStop() {
-        super.onStop();
-        if(instantdownloadreceiver != null) {
-            unregisterReceiver(instantdownloadreceiver);
-            instantdownloadreceiver = null;
-        }
-    }*/
 
 
     /**
@@ -596,13 +588,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
         return retval;
     }
-   /* @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        //Tab i = getSupportActionBar().getTabAt(0);
-        CharSequence str = getSupportActionBar().getSubtitle();
-        return mDualPane;
-        
-    }*/
+ 
     private class displayFileTask extends AsyncTask<Void,Void,Integer> {
         final AlertDialog.Builder uploadFile = new AlertDialog.Builder(FileDisplayActivity.this);
         String path;
@@ -705,20 +691,14 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
         
     }
-
-    private void getFilesinFoldersToDownload(OCFile parentDirectory, List<OCFile> filesToDownload,int sharedIndicator) {
-        Vector<OCFile> list = getStorageManager().getDirectoryContent(parentDirectory);
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).isDirectory()) {
-                getFilesinFoldersToDownload(list.get(i), filesToDownload,sharedIndicator);
-            } else if (!list.get(i).isDown()) {
-                if(sharedIndicator == 1) {
-                    shareNotifier.setContentText("File "+list.get(i).getFileName()+" was shared with you ");
-                    notificationManager.notify(0, shareNotifier.build());
-                }
-                filesToDownload.add(list.get(i));
-            }else if(!list.get(i).isDirectory() && list.get(i).getLocalModificationTimestamp() < list.get(i).getModificationTimestamp()) {
-                filesToDownload.add(list.get(i));
+    
+    private void getFiles(OCFile f1,List<OCFile> f2,DataStorageManager strgmanager) {
+        Vector<OCFile> list = strgmanager.getDirectoryContent(f1);
+        for(int i = 0;i<list.size();i++) {
+            if(list.get(i).isDirectory()) {
+                getFiles(list.get(i), f2,strgmanager);
+            } else if(!list.get(i).isDown()) {
+                f2.add(list.get(i));
             }
         }
     }
@@ -830,7 +810,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent(this,InitialPageActivity.class);
+        //Intent intent = new Intent(this,InitialPageActivity.class);
         //startActivity(intent);
         OCFileListFragment listOfFiles = getListOfFilesFragment(); 
         if (mDualPane || getSecondFragment() == null) {
@@ -900,10 +880,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             unregisterReceiver(mDownloadFinishReceiver);
             mDownloadFinishReceiver = null;
         }
-        /*if(instantdownloadreceiver != null) {
-            unregisterReceiver(instantdownloadreceiver);
-            instantdownloadreceiver = null;
-        }*/
+
         Log_OC.d(TAG, "onPause() end");
     }
 
@@ -1017,14 +994,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         return null;
     }
 
-    /*public class fileDownloadReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String message = intent.getStringExtra("message");
-            Log.d("receiver", "Got message: " + message);
-            instantDownloadFile();
-        }
-    }*/
     /**
      * Pushes a directory to the drop down list
      * @param directory to push
@@ -1578,10 +1547,11 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             i.putExtra(FileDownloader.EXTRA_ACCOUNT, account);
             i.putExtra(FileDownloader.EXTRA_FILE, mWaitingToPreview);
             Log.d("############################ ",mWaitingToPreview.getFileName());
+            startService(i);
         }
     }
 
-    
+
     private OCFile getCurrentDir() {
         OCFile file = getFile();
         if (file != null) {

@@ -65,6 +65,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.util.Log;
 import android.webkit.MimeTypeMap;
 import android.widget.RemoteViews;
 
@@ -253,6 +254,10 @@ public class FileUploader extends Service implements OnDatatransferProgressListe
 
             files = new OCFile[localPaths.length];
             for (int i = 0; i < localPaths.length; i++) {
+                //Log.d("################################## ",remotePaths[i]);
+                //Log.d("################################# ",localPaths[i]);
+                //Log.d("################################# ",mimeTypes[i]);
+                
                 files[i] = obtainNewOCFileToUpload(remotePaths[i], localPaths[i], ((mimeTypes != null) ? mimeTypes[i]
                         : (String) null), storageManager);
                 if (files[i] == null) {
@@ -670,7 +675,9 @@ public class FileUploader extends Service implements OnDatatransferProgressListe
         newFile.setMimetype(mimeType);
 
         // parent dir
+        
         String parentPath = new File(remotePath).getParent();
+        //Log.d("*************************** ",remotePath);
         parentPath = parentPath.endsWith(OCFile.PATH_SEPARATOR) ? parentPath : parentPath + OCFile.PATH_SEPARATOR;
         OCFile parentDir = storageManager.getFileByPath(parentPath);
         long parentDirId = parentDir.getFileId();
