@@ -27,7 +27,6 @@ import java.util.Vector;
 import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
@@ -42,8 +41,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -52,27 +49,23 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.text.Editable;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
-import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.Window;
 import com.owncloud.android.Log_OC;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountAuthenticator;
@@ -86,7 +79,6 @@ import com.owncloud.android.files.services.FileObserverService;
 import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
 import com.owncloud.android.files.services.instantDownloadSharedFilesService;
-import com.owncloud.android.operations.CreateAndUploadFile;
 import com.owncloud.android.operations.CreateFolderOperation;
 import com.owncloud.android.operations.OnRemoteOperationListener;
 import com.owncloud.android.operations.RemoteOperation;
@@ -95,22 +87,17 @@ import com.owncloud.android.operations.RemoteOperationResult.ResultCode;
 import com.owncloud.android.operations.RemoveFileOperation;
 import com.owncloud.android.operations.RenameFileOperation;
 import com.owncloud.android.operations.SynchronizeFileOperation;
-import com.owncloud.android.providers.FileContentProvider;
 import com.owncloud.android.syncadapter.FileSyncService;
-import com.owncloud.android.ui.adapter.FileListListAdapter;
 import com.owncloud.android.ui.dialog.EditNameDialog;
-import com.owncloud.android.ui.dialog.IndeterminateProgressDialog;
 import com.owncloud.android.ui.dialog.EditNameDialog.EditNameDialogListener;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog.OnSslValidatorListener;
-import com.owncloud.android.ui.fragment.ConfirmationDialogFragment;
 import com.owncloud.android.ui.fragment.FileDetailFragment;
 import com.owncloud.android.ui.fragment.FileFragment;
 import com.owncloud.android.ui.fragment.OCFileListFragment;
 import com.owncloud.android.ui.preview.PreviewImageActivity;
 import com.owncloud.android.ui.preview.PreviewMediaFragment;
 import com.owncloud.android.ui.preview.PreviewVideoActivity;
-import com.owncloud.android.utils.FileStorageUtils;
 
 /**
  * Displays, what files the user has available in his ownCloud.
@@ -515,6 +502,8 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             break;
         }
         case R.id.action_create_file: {
+            final String currentDir = getCurrentDir().getRemotePath();
+            if(!currentDir.contains("Shared")) {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle("Create new file ");
             alert.setMessage("Please enter the name of the file ");
@@ -525,7 +514,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             //alert.setContentView(R.layout.select_folder_dialog_spinner);
             alert.setView(deleteDialogView);
             final EditText edittext = (EditText)deleteDialogView.findViewById(R.id.filename);
-            final String currentDir = getCurrentDir().getRemotePath();
+            
             Log.d(TAG,getCurrentDir().getRemotePath());
             alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 
@@ -545,19 +534,28 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                         value = value+".txt";
                     }
                     uri = "file:///sdcard/ownCloud/"+account.name+currentDir+value;
+                    final File f2 = new File(Environment.getExternalStorageDirectory(),"ownCloud/" + account.name + currentDir);
                     final File f1 = new File(Environment.getExternalStorageDirectory(),"ownCloud/" + account.name + currentDir+value);
+                    Log.d(TAG,f1.getName()+" "+f1.getPath());
                         try {
+                            if(!f2.exists()){
+                                f2.mkdirs();
+                            } 
                             if(f1.createNewFile()) {
                                 Intent intent = new Intent(Intent.ACTION_EDIT);
                                 intent.setDataAndType(Uri.parse(uri), "text/plain");
                                 startActivity(intent);
+                                flag = 1;
                             }
                         } catch (IOException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
-                        }
+                        } finally {
+                            if(flag == 1) {
                         taskInput = f1.getAbsolutePath()+"#"+currentDir+value;
                         new displayFileTask(taskInput).execute();
+                            }
+                        }
                     Log.d(TAG, "you entre "+value);
                 }
             });
@@ -570,7 +568,10 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 }
             });
             alert.show();
-
+            } else
+            {
+                Toast.makeText(getApplicationContext(), "You cannot create files here ", Toast.LENGTH_SHORT).show();
+            }
 
             break;
         }
@@ -589,6 +590,15 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         return retval;
     }
  
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        Log.d(TAG,mDirectories.getCount()+" "+mDirectories.getItem(mDirectories.getCount()-1));
+        if(mDirectories.equals("Shared")) {
+            menu.removeItem(R.id.action_create_file);
+            return true;
+        }
+        return true;
+    }
     private class displayFileTask extends AsyncTask<Void,Void,Integer> {
         final AlertDialog.Builder uploadFile = new AlertDialog.Builder(FileDisplayActivity.this);
         String path;
@@ -673,7 +683,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             if (filesInFolder.get(i).isDirectory()) {
                 if(filesInFolder.get(i).getFileName().equals("Shared"))
                     sharedIndicator = 1;
-                getFilesinFoldersToDownload(filesInFolder.get(i), filesToDownload,sharedIndicator);
+                getFilesinFoldersToDownload(filesInFolder.get(i), filesToDownload);
                     sharedIndicator = 0;
             } else if (!filesInFolder.get(i).isDown()) {
                 filesToDownload.add(filesInFolder.get(i));

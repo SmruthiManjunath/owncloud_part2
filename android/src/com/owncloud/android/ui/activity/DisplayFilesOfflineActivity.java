@@ -54,6 +54,7 @@ public class DisplayFilesOfflineActivity extends Activity {
                 + folder);
         owncloudFiles = owncloudDirectory.listFiles();
         fileArrayList = new ArrayList<String>();
+        if(owncloudFiles != null) {
         for (int i = 0; i < owncloudFiles.length; i++) {
             if (!(!isShared && !owncloudFiles[i].isFile() && owncloudFiles[i].getName().equals("Shared")))
                 fileArrayList.add(owncloudFiles[i].getName());
@@ -61,6 +62,11 @@ public class DisplayFilesOfflineActivity extends Activity {
         adapter = new FileAdapter(this, R.layout.local_file_display, fileArrayList);
         fileviews.setAdapter(adapter);
         fileviews.setOnItemClickListener(onFileClick);
+        } else if(owncloudFiles == null && !isShared){
+           Toast.makeText(this, "You do not have any files in your owncloud folder", Toast.LENGTH_SHORT).show();
+        }else if(owncloudFiles == null && isShared){
+            Toast.makeText(this, "You do not have any files shared with you", Toast.LENGTH_SHORT).show();
+         }
 
     }
 
