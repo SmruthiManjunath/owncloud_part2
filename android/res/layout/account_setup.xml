@@ -145,6 +145,14 @@
             android:inputType="textNoSuggestions" 
 			/>
 
+        <Spinner
+            android:id="@+id/spinner1"
+            android:layout_width="wrap_content"
+            android:layout_height="0dip"
+            android:layout_weight="0.07"
+            android:entries="@array/server_array"
+            android:prompt="@string/server_location" />
+
 		<EditText
 		    android:id="@+id/account_password"
 		    android:layout_width="match_parent"
@@ -154,7 +162,16 @@
 		    android:hint="@string/auth_password"
 		    android:inputType="textPassword" 
             />
-        
+      <EditText
+		    android:id="@+id/account_password2"
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"
+		    android:drawablePadding="5dp"
+		    android:ems="10"
+		    android:hint="Re-enterPassword"
+		    android:visibility="invisible"
+		    android:inputType="textPassword" 
+            />  
         <TextView
             android:id="@+id/auth_status_text"
             android:layout_width="match_parent"
@@ -174,18 +191,29 @@
             android:onClick="onOkClick"
             android:text="@string/setup_btn_connect"
             />
-
+	<Button
+            android:id="@+id/buttonReg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:onClick = "Reguser"
+            android:visibility="invisible"
+            android:text="Register User"
+            />
+        
         <Button
             android:id="@+id/account_register"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
             android:textColor="#0000FF" 
-            android:onClick="onRegisterClick"
+            android:onClick = "httpRegstr"
             android:paddingBottom="5dp"
             android:paddingTop="5dp"
             android:text="@string/auth_register"
             />
+            <!--  android:onClick="onRegisterClick" -->
+            
     </LinearLayout>
 
 </ScrollView>

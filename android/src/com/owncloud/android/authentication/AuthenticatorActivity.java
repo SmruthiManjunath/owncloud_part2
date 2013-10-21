@@ -18,20 +18,39 @@
 
 package com.owncloud.android.authentication;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.CoreProtocolPNames;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -40,6 +59,7 @@ import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -47,12 +67,15 @@ import android.view.View.OnFocusChangeListener;
 import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockDialogFragment;
 import com.owncloud.android.Log_OC;
@@ -66,6 +89,7 @@ import com.owncloud.android.operations.OwnCloudServerCheckOperation;
 import com.owncloud.android.operations.RemoteOperation;
 import com.owncloud.android.operations.RemoteOperationResult;
 import com.owncloud.android.operations.RemoteOperationResult.ResultCode;
+import com.owncloud.android.ui.activity.FileDisplayActivity;
 import com.owncloud.android.ui.dialog.SamlWebViewDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog.OnSslValidatorListener;
@@ -80,7 +104,7 @@ import eu.alefzero.webdav.WebdavClient;
  * @author David A. Velasco
  */
 public class AuthenticatorActivity extends AccountAuthenticatorActivity
-implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeListener, OnEditorActionListener, SsoWebViewClientListener{
+implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeListener, OnEditorActionListener, SsoWebViewClientListener, OnItemSelectedListener{
 
     private static final String TAG = AuthenticatorActivity.class.getSimpleName();
 
@@ -154,20 +178,22 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     
     private EditText mUsernameInput;
     private EditText mPasswordInput;
-    
+    private EditText mPasswordInput2;
     private CheckBox mOAuth2Check;
     
     private TextView mOAuthAuthEndpointText;
     private TextView mOAuthTokenEndpointText;
-    
+    private Spinner locationSpinner;
+    private Object location;
     private SamlWebViewDialog mSamlDialog;
     
     private View mOkButton;
+    private Button mRegButton;
     
     private String mAuthToken;
     
     private boolean mResumed; // Control if activity is resumed
-
+    
 
     /**
      * {@inheritDoc}
@@ -185,6 +211,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         mHostUrlInput.setText(getString(R.string.server_url));  // valid although R.string.server_url is an empty string
         mUsernameInput = (EditText) findViewById(R.id.account_username);
         mPasswordInput = (EditText) findViewById(R.id.account_password);
+        mPasswordInput2 = (EditText) findViewById(R.id.account_password2);
         mOAuthAuthEndpointText = (TextView)findViewById(R.id.oAuthEntryPoint_1);
         mOAuthTokenEndpointText = (TextView)findViewById(R.id.oAuthEntryPoint_2);
         mOAuth2Check = (CheckBox) findViewById(R.id.oauth_onOff_check);
@@ -193,7 +220,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         
         /// set Host Url Input Enabled
         mHostUrlInputEnabled = getResources().getBoolean(R.bool.show_server_url_input);
-        
+        locationSpinner = (Spinner) findViewById(R.id.spinner1);
 
         /// complete label for 'register account' button
         Button b = (Button) findViewById(R.id.account_register);
@@ -207,6 +234,8 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         mAction = getIntent().getByteExtra(EXTRA_ACTION, ACTION_CREATE); 
         mAccount = null;
         mHostBaseUrl = "";
+        location = locationSpinner.getSelectedItem();
+        //locationSpinner.setOnItemSelectedListener(this);
         boolean refreshButtonEnabled = false;
         
         // URL input configuration applied
@@ -231,14 +260,18 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
             /// retrieve extras from intent
             mAccount = getIntent().getExtras().getParcelable(EXTRA_ACCOUNT);
+            
             if (mAccount != null) {
                 String ocVersion = mAccountMgr.getUserData(mAccount, AccountAuthenticator.KEY_OC_VERSION);
+                Log.d("!!!!!!!!!!!!!!!!!!!!!!!!! ",mAccount.name);
                 if (ocVersion != null) {
                     mDiscoveredVersion = new OwnCloudVersion(ocVersion);
                 }
                 mHostBaseUrl = normalizeUrl(mAccountMgr.getUserData(mAccount, AccountAuthenticator.KEY_OC_BASE_URL));
                 mHostUrlInput.setText(mHostBaseUrl);
+                
                 String userName = mAccount.name.substring(0, mAccount.name.lastIndexOf('@'));
+                Log.d("!!!!!!!!!!!!!!!!!!!!!!!!!4234 ",userName);
                 mUsernameInput.setText(userName);
             }
             initAuthorizationMethod();  // checks intent and setup.xml to determine mCurrentAuthorizationMethod
@@ -273,6 +306,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
             // account data, if updating
             mAccount = savedInstanceState.getParcelable(KEY_ACCOUNT);
+            //Log.d("////////////////// ",mAccount.name);
             mAuthTokenType = savedInstanceState.getString(AccountAuthenticator.KEY_AUTH_TOKEN_TYPE);
             if (mAuthTokenType == null) {
                 mAuthTokenType =  AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD;
@@ -381,7 +415,6 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
         mAuthTokenType = getIntent().getExtras().getString(AccountAuthenticator.KEY_AUTH_TOKEN_TYPE);
         mAccount = getIntent().getExtras().getParcelable(EXTRA_ACCOUNT);
-        
         // TODO could be a good moment to validate the received token type, if not null
         
         if (mAuthTokenType == null) {    
@@ -406,6 +439,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     
         if (mAccount != null) {
             String userName = mAccount.name.substring(0, mAccount.name.lastIndexOf('@'));
+            Log.d("mAccount ",mAccount.name);
             mUsernameInput.setText(userName);
         }
         
@@ -502,6 +536,9 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         
     }
 
+    
+    
+    
 
     /**
      * Parses the redirection with the response to the GET AUTHORIZATION request to the 
@@ -566,11 +603,17 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             }
         }
     }
+    public void callonRefresh(String s1) {
+        checkOcServer(s1);
+    }
 
-
-    private void checkOcServer() {
-        String uri = trimUrlWebdav(mHostUrlInput.getText().toString().trim());
-        
+    private void checkOcServer(String... urlServer) {
+        String uri;
+        if(urlServer.length > 0) {
+            uri = urlServer[0];
+        } else {
+            uri = trimUrlWebdav(mHostUrlInput.getText().toString().trim());
+        }
         if (!mHostUrlInputEnabled){
             uri = getString(R.string.server_url);
         }
@@ -705,6 +748,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
         /// get basic credentials entered by user
         String username = mUsernameInput.getText().toString();
+        username = username+"@"+location;
         String password = mPasswordInput.getText().toString();
 
         /// be gentle with the user
@@ -1211,16 +1255,24 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
         Uri uri = Uri.parse(mHostBaseUrl);
         String username = mUsernameInput.getText().toString().trim();
+        Log.d("***********************************################## ",username);
         if (isSaml) {
             username = getUserNameForSamlSso();
             
         } else if (isOAuth) {
             username = "OAuth_user" + (new java.util.Random(System.currentTimeMillis())).nextLong();
         }            
+        username = username + "@" + location;
+        Log.d("***********************************################## ",username);
         String accountName = username + "@" + uri.getHost();
+        //String accountName = username+"@"+location;
         if (uri.getPort() >= 0) {
             accountName += ":" + uri.getPort();
         }
+        
+        //String username = (username_text.getText().toString().trim());
+        //String accountName = username + "@" + url.getHost();
+        
         mAccount = new Account(accountName, AccountAuthenticator.ACCOUNT_TYPE);
         if (AccountUtils.exists(mAccount, getApplicationContext())) {
             // fail - not a new account, but an existing one; disallow
@@ -1401,7 +1453,133 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         startActivity(register);
     }
 
+/**
+ * VillageShare
+ */
+    public void httpRegstr(View view) {
+        mPasswordInput2 = (EditText) findViewById(R.id.account_password2);
+        mPasswordInput2.setVisibility(View.VISIBLE);
+       
+        mPasswordInput.setText("");
+        mUsernameInput.setText("");
+        mOkButton.setVisibility(View.INVISIBLE);
+        Button mNewUserButton = (Button)findViewById(R.id.account_register);
+        mNewUserButton.setVisibility(View.INVISIBLE);
+        mRegButton = (Button) findViewById(R.id.buttonReg);
+        mRegButton.setVisibility(View.VISIBLE);
+        
+        
+    }
+    public void Reguser(View view) {
+        String passwordva2 = mPasswordInput2.getText().toString().trim();
+        String passwordva1 = mPasswordInput.getText().toString().trim();
+        String username = mUsernameInput.getText().toString().trim();
+        String loc = locationSpinner.getSelectedItem().toString();
+        final String str1 = mHostUrlInput.getText().toString();
+        if(passwordva1.equals("")||passwordva2.equals("")||username.equals("")) {
+            Toast.makeText(getApplicationContext(), "One or more of required fields not entered", Toast.LENGTH_SHORT).show();
+        } else if(!passwordva1.equals(passwordva2)) {
+            mPasswordInput.setText("");
+            mPasswordInput2.setText("");
+            Toast.makeText(getApplicationContext(), "The two passwords do not match. Please reenter the passwords", Toast.LENGTH_LONG).show();
+            
+        } else {
+            username = username + "@" + loc;
+            JSONObject obj1 = new JSONObject();
+            final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair("regname", username));
+            params.add(new BasicNameValuePair("regpass1",passwordva1));
+            params.add(new BasicNameValuePair("regpass2",passwordva2));
+            //Log.d("sdn object ",params.toString());
 
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    
+                   HttpPost post = new HttpPost("http://"+str1+"/androiduserreg.php");
+                   
+                   HttpEntity entity;
+                   try {
+                       entity = new UrlEncodedFormEntity(params,"utf-8");
+                       HttpClient client = new DefaultHttpClient();
+                       post.setEntity(entity);
+                       client.getParams().setParameter(CoreProtocolPNames.USER_AGENT,
+                               System.getProperty("http.agent"));
+                       post.setHeader("User-Agent", "Android-ownCloud");
+                       HttpResponse response = client.execute(post);
+                       
+                       
+                       //Log.d(TAG,"Fetching friend list from server");
+                       byte buff[] = new byte[64];
+                       if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
+                           HttpEntity str = response.getEntity();
+                           InputStream inputstream = str.getContent();
+                           org.apache.http.Header contentencoding = response.getFirstHeader("Content-Encoding");
+                           if(contentencoding != null && contentencoding.getValue().equalsIgnoreCase("gzip")) {
+                               inputstream = new GZIPInputStream(inputstream);
+                           }
+                           String resultstring = convertStreamToString(inputstream);
+                           inputstream.close();
+                           resultstring = resultstring.substring(1,resultstring.length()-1);
+                           //String strre = EntityUtils.toString(str);
+                           
+                           //JSONObject js = new JSONObject(strre);
+                           //InputStream is = str.getContent();
+                           //obj1 = new JSONObject(
+                           Log.d("TAG",resultstring);
+                           Log.d("RegisterNewUserActivity ",HttpStatus.SC_OK+" ");
+                            if(resultstring.contains("true")) {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(getApplicationContext(), "Account created", Toast.LENGTH_SHORT).show();
+                                    
+                                }
+                            }); 
+                            }
+                           
+                           //finish();
+                            Intent i = getBaseContext().getPackageManager()
+                                    .getLaunchIntentForPackage( getBaseContext().getPackageName() );
+                       i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                       startActivity(i);
+                        }
+                            
+                        
+                   } catch (UnsupportedEncodingException e) {
+                       // TODO Auto-generated catch block
+                       e.printStackTrace();
+                   } /*catch (ClientProtocolException e) {
+                       // TODO Auto-generated catch block
+                       e.printStackTrace();
+                   }*/ catch (IOException e) {
+                       // TODO Auto-generated catch block
+                       e.printStackTrace();
+                   } 
+                   
+                   }
+
+                private String convertStreamToString(InputStream inputstream) {
+                    // TODO Auto-generated method stub
+                    String line = "";
+                    StringBuilder total = new StringBuilder();
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(inputstream));
+                    try {
+                        while ((line = rd.readLine()) != null) {
+                            total.append(line);
+                        }
+                    } catch (Exception e) {
+                    //Toast.makeText(this, "Stream Exception", Toast.LENGTH_SHORT).show();
+                    }
+                return total.toString();
+                
+                }
+                };
+                new Thread(runnable).start();
+        }
+    }
+    /**
+     * VillageShare
+     */
     /**
      * Updates the content and visibility state of the icon and text associated
      * to the last check on the ownCloud server.
@@ -1661,5 +1839,21 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             checkOcServer();
         }
         return super.onTouchEvent(event);
+    }
+    
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        // TODO Auto-generated method stub
+        
+        location = parent.getItemAtPosition(position);
+        Log.d("############************ ",location.toString());
+        //Toast.makeText(parent.getContext(), "OnItemSelectedListener : " + parent.getItemAtPosition(position).toString(),Toast.LENGTH_SHORT).show();
+        
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> arg0) {
+        // TODO Auto-generated method stub
+        
     }
 }

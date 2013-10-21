@@ -575,6 +575,13 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
             break;
         }
+        case R.id.action_friend:{
+            //Toast.makeText(getApplicationContext(), "Friend selec", Toast.LENGTH_SHORT).show();
+            ////No syncing
+            Intent friendsIntent = new Intent(this, TabLayoutActivity.class);
+            startActivity(friendsIntent);
+            break;
+        }
         case android.R.id.home: {
             FileFragment second = getSecondFragment();
             OCFile currentDir = getCurrentDir();
@@ -592,7 +599,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
  
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        Log.d(TAG,mDirectories.getCount()+" "+mDirectories.getItem(mDirectories.getCount()-1));
+        //Log.d(TAG,mDirectories.getCount()+" "+mDirectories.getItem(mDirectories.getCount()-1));
         if(mDirectories.equals("Shared")) {
             menu.removeItem(R.id.action_create_file);
             return true;

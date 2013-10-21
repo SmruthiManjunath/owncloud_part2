@@ -50,6 +50,7 @@ public class DisplayFilesOfflineActivity extends Activity {
         isShared = bundle.getBoolean("isShared");
         ListView fileviews = (ListView) findViewById(R.id.filelist);
         account = AccountUtils.getCurrentOwnCloudAccount(this);
+        if(AccountUtils.getCurrentOwnCloudAccount(getApplicationContext()) != null) {
         owncloudDirectory = new File(Environment.getExternalStorageDirectory(), "ownCloud/" + account.name + "/"
                 + folder);
         owncloudFiles = owncloudDirectory.listFiles();
@@ -67,6 +68,10 @@ public class DisplayFilesOfflineActivity extends Activity {
         }else if(owncloudFiles == null && isShared){
             Toast.makeText(this, "You do not have any files shared with you", Toast.LENGTH_SHORT).show();
          }
+        } else {
+            Toast.makeText(this, "Please login to see", Toast.LENGTH_SHORT).show();
+            finish();
+        }
 
     }
 

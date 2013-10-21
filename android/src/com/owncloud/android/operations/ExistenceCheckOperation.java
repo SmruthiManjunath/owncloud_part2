@@ -20,11 +20,13 @@ package com.owncloud.android.operations;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.HeadMethod;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.util.Log;
+
 import com.owncloud.android.Log_OC;
 
 import eu.alefzero.webdav.WebdavClient;
-import android.content.Context;
-import android.net.ConnectivityManager;
 
 /**
  * Operation to check the existence or absence of a path in a remote server.

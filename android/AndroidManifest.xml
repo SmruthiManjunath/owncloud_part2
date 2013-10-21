@@ -98,7 +98,7 @@
 					android:label="@string/app_name"
 					android:theme="@style/Theme.ownCloud.Fullscreen" >
 		</activity>        
-
+		<activity android:name="com.owncloud.android.authentication.RegisterNewUserActivity"/>
         <service
             android:name=".authentication.AccountAuthenticatorService"
             android:exported="true">
@@ -159,6 +159,13 @@
         <activity android:name=".ui.activity.ConflictsResolveActivity"/>
         <activity android:name=".ui.activity.GenericExplanationActivity"/>
         <activity android:name=".ui.activity.ErrorsWhileCopyingHandlerActivity"/>
+         <activity android:name=".ui.activity.FacebookSync"/>
+        <activity android:name=".ui.activity.TabLayoutActivity"/>
+        <activity android:name=".ui.activity.YourFriendsActivity" />
+        <activity android:name=".ui.activity.AddFriendsActivity" />
+        <activity android:name=".ui.activity.AcceptFriendRequestsActivity" />
+        <activity android:name=".ui.activity.FriendsActivity"/>
+         <activity android:name=".ui.activity.FacebookFriendSelectDisplay" />
          <activity android:name=".ui.activity.InitialPageActivity"></activity>
          <activity android:name=".ui.activity.DisplayFilesOfflineActivity"/>
         <activity android:name=".ui.activity.LogHistoryActivity"/>
