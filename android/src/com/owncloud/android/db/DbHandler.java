@@ -38,7 +38,8 @@ public class DbHandler {
     private final int mDatabaseVersion = 3;
 
     private final String TABLE_INSTANT_UPLOAD = "instant_upload";
-
+    private final String TABLE_YOUR_FRIENDS = "your_friends";
+    private final String TABLE_ACCEPT_FRIENDS = "received_requests";
     public static final int UPLOAD_STATUS_UPLOAD_LATER = 0;
     public static final int UPLOAD_STATUS_UPLOAD_FAILED = 1;
 
@@ -104,6 +105,8 @@ public class DbHandler {
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE " + TABLE_INSTANT_UPLOAD + " (" + " _id INTEGER PRIMARY KEY, " + " path TEXT,"
                     + " account TEXT,attempt INTEGER,message TEXT);");
+            db.execSQL("CREATE TABLE " + TABLE_YOUR_FRIENDS + " (" + " _id INTEGER PRIMARY KEY, "+" friend TEXT, " + " account TEXT);");
+            db.execSQL("CREATE TABLE " + TABLE_ACCEPT_FRIENDS + " (" + " _id INTEGER PRIMARY KEY, "+" friendrequestfrom TEXT, " + " account TEXT);");
         }
 
         @Override

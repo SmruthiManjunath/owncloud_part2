@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.zip.GZIPInputStream;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -36,6 +35,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.CoreProtocolPNames;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -89,7 +89,6 @@ import com.owncloud.android.operations.OwnCloudServerCheckOperation;
 import com.owncloud.android.operations.RemoteOperation;
 import com.owncloud.android.operations.RemoteOperationResult;
 import com.owncloud.android.operations.RemoteOperationResult.ResultCode;
-import com.owncloud.android.ui.activity.FileDisplayActivity;
 import com.owncloud.android.ui.dialog.SamlWebViewDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog;
 import com.owncloud.android.ui.dialog.SslValidatorDialog.OnSslValidatorListener;
@@ -131,7 +130,8 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     private static final String KEY_REFRESH_BUTTON_ENABLED = "KEY_REFRESH_BUTTON_ENABLED";
     
     private static final String KEY_OC_USERNAME_EQUALS = "oc_username=";
-
+    private static final String REGISTER_USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS";
+    private static final String REGISTER_USER_SUCCESS = "ACCOUNT_CREATED";
     private static final String AUTH_ON = "on";
     private static final String AUTH_OFF = "off";
     private static final String AUTH_OPTIONAL = "optional";
@@ -1485,7 +1485,6 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             
         } else {
             username = username + "@" + loc;
-            JSONObject obj1 = new JSONObject();
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
             params.add(new BasicNameValuePair("regname", username));
             params.add(new BasicNameValuePair("regpass1",passwordva1));
@@ -1507,72 +1506,52 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
                                System.getProperty("http.agent"));
                        post.setHeader("User-Agent", "Android-ownCloud");
                        HttpResponse response = client.execute(post);
-                       
-                       
-                       //Log.d(TAG,"Fetching friend list from server");
-                       byte buff[] = new byte[64];
+                   
                        if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
-                           HttpEntity str = response.getEntity();
-                           InputStream inputstream = str.getContent();
-                           org.apache.http.Header contentencoding = response.getFirstHeader("Content-Encoding");
-                           if(contentencoding != null && contentencoding.getValue().equalsIgnoreCase("gzip")) {
-                               inputstream = new GZIPInputStream(inputstream);
-                           }
-                           String resultstring = convertStreamToString(inputstream);
-                           inputstream.close();
-                           resultstring = resultstring.substring(1,resultstring.length()-1);
-                           //String strre = EntityUtils.toString(str);
+                           HttpEntity entityresponse = response.getEntity();
+                           String jsonentity = EntityUtils.toString(entityresponse);
+                           JSONObject jsonObject = new JSONObject(jsonentity);
+                           JSONObject responseReceived = (JSONObject) jsonObject.get("reply");
                            
-                           //JSONObject js = new JSONObject(strre);
-                           //InputStream is = str.getContent();
-                           //obj1 = new JSONObject(
-                           Log.d("TAG",resultstring);
-                           Log.d("RegisterNewUserActivity ",HttpStatus.SC_OK+" ");
-                            if(resultstring.contains("true")) {
+                           String registerUserReply = responseReceived.getString("reply");
+                            if(registerUserReply.equals(REGISTER_USER_SUCCESS)) {
                             runOnUiThread(new Runnable() {
                                 public void run() {
                                     Toast.makeText(getApplicationContext(), "Account created", Toast.LENGTH_SHORT).show();
                                     
                                 }
                             }); 
-                            }
-                           
-                           //finish();
                             Intent i = getBaseContext().getPackageManager()
                                     .getLaunchIntentForPackage( getBaseContext().getPackageName() );
                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                        startActivity(i);
-                        }
+                            } else if(registerUserReply.equals(REGISTER_USER_ALREADY_EXISTS)) {
+                           
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(), "Username already exists on the server, try a different one", Toast.LENGTH_SHORT).show();
+                                        
+                                    }
+                                }); 
+                            } else {
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(), "Unable to create account, please try after sometime", Toast.LENGTH_SHORT).show();
+                                        
+                                    }
+                                }); 
+                            }
                             
-                        
+                        }
                    } catch (UnsupportedEncodingException e) {
-                       // TODO Auto-generated catch block
                        e.printStackTrace();
-                   } /*catch (ClientProtocolException e) {
-                       // TODO Auto-generated catch block
+                   } catch (IOException e) {
                        e.printStackTrace();
-                   }*/ catch (IOException e) {
-                       // TODO Auto-generated catch block
-                       e.printStackTrace();
-                   } 
+                   } catch (JSONException e) {
+                    e.printStackTrace();
+                } 
                    
                    }
-
-                private String convertStreamToString(InputStream inputstream) {
-                    // TODO Auto-generated method stub
-                    String line = "";
-                    StringBuilder total = new StringBuilder();
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(inputstream));
-                    try {
-                        while ((line = rd.readLine()) != null) {
-                            total.append(line);
-                        }
-                    } catch (Exception e) {
-                    //Toast.makeText(this, "Stream Exception", Toast.LENGTH_SHORT).show();
-                    }
-                return total.toString();
-                
-                }
                 };
                 new Thread(runnable).start();
         }
