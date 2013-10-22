@@ -17,6 +17,8 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.owncloud.android.R;
+import com.owncloud.android.files.services.FriendListNotifierService;
+import com.owncloud.android.files.services.FriendNotifierService;
 import com.owncloud.android.files.services.instantDownloadSharedFilesService;
 
 public class InitialPageActivity extends Activity {
@@ -73,6 +75,17 @@ public class InitialPageActivity extends Activity {
         Calendar cal = Calendar.getInstance();
         alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 5 * 60 * 1000, pintent);
 
+        Intent intentfriend = new Intent(this, FriendNotifierService.class);
+        alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+        PendingIntent pintentfriend = PendingIntent.getService(this, 0, intentfriend, 0);
+        cal = Calendar.getInstance();
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 5 * 60 * 1000, pintentfriend);
+        
+        Intent intentfriendList = new Intent(this, FriendListNotifierService.class);
+        alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+        PendingIntent pintentfriendlist = PendingIntent.getService(this, 0, intentfriendList, 0);
+        cal = Calendar.getInstance();
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), 5 * 60 * 1000, pintentfriendlist);
         Log.d(TAG, "Service started");
     }
 

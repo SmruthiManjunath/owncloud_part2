@@ -190,6 +190,8 @@
         <receiver android:name=".ui.activity.instantDownldreceiver" >
         </receiver>
         <service android:name=".files.services.FileObserverService"/>
+         <service android:name=".files.services.FriendNotifierService"/>
+         <service android:name=".files.services.FriendListNotifierService"/>
         
         
     </application>

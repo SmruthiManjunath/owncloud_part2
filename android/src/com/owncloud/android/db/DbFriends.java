@@ -21,7 +21,7 @@ public class DbFriends {
 
     private final String TABLE_YOUR_FRIENDS = "your_friends";
     private final String TABLE_ACCEPT_FRIENDS = "received_requests";
-    String[] accept_friends_cloumns = {"_ID","friendRequestForm","account"};
+    String[] accept_friends_cloumns = {"_ID","friendrequestfrom","account"};
     String[] your_friends_cloumns = {"_ID","friend","account"};
     public DbFriends(Context context) {
         mHelper = new OpenerHelper(context);
@@ -60,7 +60,7 @@ public class DbFriends {
         }
        for(String s : presentInDatabase) {
            if(!friendRequests.contains(s)) {
-                mDB.delete(TABLE_ACCEPT_FRIENDS, "friendRequestFrom = ?", new String[] {s});
+                mDB.delete(TABLE_ACCEPT_FRIENDS, "friendrequestfrom = ?", new String[] {s});
            }
        }
        
@@ -69,10 +69,10 @@ public class DbFriends {
 
     public boolean putNewFriends(String friendAccountName, String account) {
         ContentValues cv = new ContentValues();
-        cv.put("friendRequestFrom", friendAccountName);
+        cv.put("friend", friendAccountName);
         cv.put("account", account);
-        long result = mDB.insert(TABLE_ACCEPT_FRIENDS, null, cv);
-        Log_OC.d(TABLE_ACCEPT_FRIENDS, "putNewFriendRequest returns with: " + result + " for friend: " + friendAccountName);
+        long result = mDB.insert(TABLE_YOUR_FRIENDS, null, cv);
+        Log_OC.d(TABLE_YOUR_FRIENDS, "putNewFriendRequest returns with: " + result + " for friend: " + friendAccountName);
         return result != -1;
     }
 
@@ -103,21 +103,11 @@ public class DbFriends {
     }
 
     public void clearFiles() {
-        mDB.delete(TABLE_INSTANT_UPLOAD, null, null);
+        mDB.delete(TABLE_ACCEPT_FRIENDS, null, null);
+        mDB.delete(TABLE_YOUR_FRIENDS, null, null);
     }
 
-    /**
-     * 
-     * @param localPath
-     * @return true when one or more pending files was removed
-     */
-    public boolean removeIUPendingFile(String localPath) {
-        long result = mDB.delete(TABLE_INSTANT_UPLOAD, "path = ?", new String[] { localPath });
-        Log_OC.d(TABLE_INSTANT_UPLOAD, "delete returns with: " + result + " for file: " + localPath);
-        return result != 0;
-
-    }
-
+    
     private class OpenerHelper extends SQLiteOpenHelper {
         public OpenerHelper(Context context) {
             super(context, mDatabaseName, null, mDatabaseVersion);

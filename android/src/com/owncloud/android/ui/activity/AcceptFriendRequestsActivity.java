@@ -28,8 +28,12 @@ import org.json.JSONObject;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +47,7 @@ import android.widget.Toast;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountAuthenticator;
 import com.owncloud.android.authentication.AccountUtils;
+import com.owncloud.android.db.DbFriends;
 import com.owncloud.android.utils.OwnCloudVersion;
 
 public class AcceptFriendRequestsActivity extends Activity {
@@ -55,18 +60,32 @@ public class AcceptFriendRequestsActivity extends Activity {
     ArrayList<String> receivedFriendshipRequestArray;
     JSONArray jary1;
     String TAG = "AcceptFriendRequestsActivity";
+    
+    DbFriends dataSource;
+    private NotificationCompat.Builder acceptFriendNotifier;
+    NotificationManager notificationManager;
 
     @Override
     public void onCreate(Bundle SavedInstanceState) {
 
         super.onCreate(SavedInstanceState);
+        dataSource = new DbFriends(this);
         setContentView(R.layout.accept_friendstab);
         AccountManager am = AccountManager.get(this);
         Account account = AccountUtils.getCurrentOwnCloudAccount(this);
         String[] url1 = (am.getUserData(account, AccountAuthenticator.KEY_OC_BASE_URL)).split("/");
         url = url1[2];
-
-        Log.d(TAG, url);
+        
+        acceptFriendNotifier = new NotificationCompat.Builder(this)
+        .setContentTitle("Received Friend Request")
+        .setSmallIcon(R.drawable.icon);
+        
+        Intent fileShareIntent = new Intent(this,AcceptFriendRequestsActivity.class);
+        PendingIntent pIntent = PendingIntent.getActivity(this, 0, fileShareIntent, 0);
+        acceptFriendNotifier.setContentIntent(pIntent);
+        acceptFriendNotifier.setAutoCancel(true);
+        notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        
         listView1 = (ListView) findViewById(R.id.listViewAccept);
         receivedFriendshipRequestArray = new ArrayList<String>();
         friendadapter = new friendArrayAdapter(this, R.layout.listacceptremove, receivedFriendshipRequestArray);
@@ -74,7 +93,7 @@ public class AcceptFriendRequestsActivity extends Activity {
 
         accountname = account.name;
         String accountName[] = accountname.split("@");
-        String username;
+        
         if (accountName.length > 2)
             username = accountName[0] + "@" + accountName[1];
         else {
@@ -106,7 +125,14 @@ public class AcceptFriendRequestsActivity extends Activity {
                         for (int i = 0; i < jary1.length(); i++) {
                             receivedFriendshipRequestArray.add(jary1.getString(i));
                         }
-
+                        List<String> notificationFor = dataSource.updateFriendRequestStatus(receivedFriendshipRequestArray, username);
+                        
+                        if(notificationFor.size() != 0) {
+                            for(int i = 0;i<notificationFor.size();i++) {
+                                 acceptFriendNotifier.setContentText(notificationFor.get(i)+ " has sent you a friend request");
+                            }
+                        }
+                        dataSource.close();
                         if (jary1.length() == 0) {
 
                             runOnUiThread(new Runnable() {

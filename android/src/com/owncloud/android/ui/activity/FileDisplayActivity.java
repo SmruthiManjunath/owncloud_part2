@@ -126,7 +126,10 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
     private FileUploaderBinder mUploaderBinder = null;
     private ServiceConnection mDownloadConnection = null, mUploadConnection = null;
     private RemoteOperationResult mLastSslUntrustedServerResult = null;
-
+    
+    //friends receiver
+    private BroadcastReceiver friendreceiver;
+    
     private boolean mDualPane;
     private View mLeftFragmentContainer;
     private View mRightFragmentContainer;
@@ -198,8 +201,8 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 //unregisterReceiver(instantdownloadreceiver);
             }
         };
-
-        // PIN CODE request ; best location is to decide, let's try this first
+        
+                // PIN CODE request ; best location is to decide, let's try this first
         if (getIntent().getAction() != null && getIntent().getAction().equals(Intent.ACTION_MAIN)
                 && savedInstanceState == null) {
             requestPinCode();
