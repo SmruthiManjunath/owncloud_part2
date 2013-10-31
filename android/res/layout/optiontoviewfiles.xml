@@ -10,16 +10,19 @@
        />
  <Button 
      android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+     android:layout_height="wrap_content"
      android:id="@+id/displayFiles"
      android:layout_below="@id/WelcomeText"
+     android:layout_centerInParent="true"
+     android:gravity="center"
      android:text="Files shared with me"/>
  <Button 
      android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+     android:layout_height="wrap_content"
      android:id="@+id/displaymyfiles"
-     android:layout_below="@id/WelcomeText"
-     android:layout_toRightOf="@id/displayFiles"
+     android:layout_centerInParent="true"
+     android:gravity="center"
+     android:layout_below="@id/displayFiles"
      android:text="Files uploaded by me"/>     
  <Button 
      android:layout_width="wrap_content"

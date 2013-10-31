@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+     >
+ <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        
+        android:id = "@+id/yourgrouptxt"/>
+
+    <Button
+        android:id="@+id/editgroupbtn1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:clickable="true"
+        android:onClick="editGroup"
+        android:text="Edit" />
+    <Button
+        android:id="@+id/deletegroupbtn1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:clickable="true"
+        android:onClick="deleteGroup"
+        android:text="Delete" />
+
+</RelativeLayout>

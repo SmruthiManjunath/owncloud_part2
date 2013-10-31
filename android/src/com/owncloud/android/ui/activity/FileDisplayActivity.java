@@ -24,6 +24,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -158,7 +172,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
     private String uri;
     private String value;
     List<String> todisplay;
-
+    private String url;
     private NotificationCompat.Builder shareNotifier;
     NotificationManager notificationManager;
     @Override
@@ -585,6 +599,53 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             startActivity(friendsIntent);
             break;
         }
+        case R.id.action_share_file:{
+            Log.d(TAG,"here");
+            
+            Account account = AccountUtils.getCurrentOwnCloudAccount(this);
+            String accountName = account.name;
+            final String username;
+            String accountNames[] = accountName.split("@");
+            if (accountNames.length > 2) {
+                username = accountNames[0] + "@" + accountNames[1];
+                url = accountNames[2];
+            }
+            else {
+                throw new NullPointerException("Account name not in correct format");
+            }
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+            HttpPost post = new HttpPost("http://" + url + "/owncloud/androidshare.php");
+            final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair("itemType", "file"));
+            params.add(new BasicNameValuePair("itemSource","7"));
+            params.add(new BasicNameValuePair("shareType","0"));
+            params.add(new BasicNameValuePair("shareWith","admin4@UCSB"));
+            params.add(new BasicNameValuePair("permission","17"));
+            params.add(new BasicNameValuePair("uidOwner",username));
+            HttpEntity entity;
+            try {
+                entity = new UrlEncodedFormEntity(params, "utf-8");
+                HttpClient client = new DefaultHttpClient();
+                post.setEntity(entity);
+                HttpResponse response = client.execute(post);
+                Log.d(TAG, "Fetching friend list from server");
+
+                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    HttpEntity entityresponse = response.getEntity();
+                    Log.d(TAG,entityresponse.toString());
+                } }catch(Exception e) {
+                    e.printStackTrace();
+                }
+                }
+                };
+                new Thread(runnable).start();
+        }break;
+        case R.id.action_group: {
+            Intent groupIntent = new Intent(this,GroupActivity.class);
+            startActivity(groupIntent);
+        }break;
         case android.R.id.home: {
             FileFragment second = getSecondFragment();
             OCFile currentDir = getCurrentDir();

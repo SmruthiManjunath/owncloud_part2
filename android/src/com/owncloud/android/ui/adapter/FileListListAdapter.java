@@ -17,15 +17,29 @@
  */
 package com.owncloud.android.ui.adapter;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
 import android.accounts.Account;
 import android.content.Context;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout.LayoutParams;
+import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.MultiAutoCompleteTextView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.owncloud.android.DisplayUtils;
@@ -33,11 +47,11 @@ import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
+import com.owncloud.android.db.DbFriends;
 import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
+import com.owncloud.android.ui.activity.FileDisplayActivity;
 import com.owncloud.android.ui.activity.TransferServiceGetter;
-
-import java.util.Vector;
 
 
 /**
@@ -47,7 +61,7 @@ import java.util.Vector;
  * @author Bartek Przybylski
  * 
  */
-public class FileListListAdapter extends BaseAdapter implements ListAdapter {
+public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnClickListener {
     private Context mContext;
     private OCFile mFile = null;
     private Vector<OCFile> mFiles = null;
@@ -57,7 +71,8 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter {
     //total size of a directory (recursive)
     private Long totalSizeOfDirectoriesRecursive = null;
     private Long lastModifiedOfAllSubdirectories = null;
-    
+    private ArrayAdapter<String> shareWithFriends;
+    DbFriends dataSource;
     public FileListListAdapter(Context context, TransferServiceGetter transferServiceGetter) {
         mContext = context;
         mAccount = AccountUtils.getCurrentOwnCloudAccount(mContext);
@@ -111,7 +126,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter {
             OCFile file = mFiles.get(position);
             TextView fileName = (TextView) view.findViewById(R.id.Filename);
             String name = file.getFileName();
-
+            Button shareButton = (Button) view.findViewById(R.id.shareItem);
             fileName.setText(name);
             ImageView fileIcon = (ImageView) view.findViewById(R.id.imageView1);
             fileIcon.setImageResource(DisplayUtils.getResourceId(file.getMimetype()));
@@ -130,11 +145,11 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter {
             } else {
                 localStateView.setVisibility(View.INVISIBLE);
             }
-            
+            dataSource = new DbFriends(mContext);
             TextView fileSizeV = (TextView) view.findViewById(R.id.file_size);
             TextView lastModV = (TextView) view.findViewById(R.id.last_mod);
             ImageView checkBoxV = (ImageView) view.findViewById(R.id.custom_checkbox);
-            
+            shareButton.setOnClickListener(this);
             if (!file.isDirectory()) {
                 fileSizeV.setVisibility(View.VISIBLE);
                 fileSizeV.setText(DisplayUtils.bytesToHumanReadable(file.getFileLength()));
@@ -175,6 +190,9 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter {
         return view;
     }
 
+    public void shareFile() {
+        
+    }
     @Override
     public int getViewTypeCount() {
         return 1;
@@ -207,6 +225,46 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter {
             mFiles = null;
         }
         notifyDataSetChanged();
+    }
+
+    @Override
+    public void onClick(View arg0) {
+        Log.d("filelistlstadapter","here sssss");
+        View view;
+        PopupWindow windowPopup;
+        Account account = AccountUtils.getCurrentOwnCloudAccount(mContext);
+        String [] accountNames = account.name.split("@");
+        String accountName = null;
+        if(accountNames.length > 2)
+            accountName = accountNames[0]+"@"+accountNames[1];
+        LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        view = inflater.inflate(R.layout.share_file_with, null); 
+        windowPopup = new PopupWindow(view,300,370,true);
+        windowPopup.showAtLocation(view, Gravity.CENTER, 0, 0);
+        //windowPopup.
+        MultiAutoCompleteTextView textView = (MultiAutoCompleteTextView)view.findViewById(R.id.autocompleteshare);
+        //(MutiAutoCompleteTextView)view.findViewById(R.id.autocompleteshare);
+        //Log.d("whqeojqwer eiwjrperq ",textView.getText().toString());
+        textView.setThreshold(2);
+        textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+        ArrayList<String> friendList = dataSource.getFriendList(accountName);
+        shareWithFriends = new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,friendList);
+        Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
+        textView.setAdapter(shareWithFriends);
+        textView.setFocusableInTouchMode(true);
+        textView.setOnItemClickListener(new OnItemClickListener() {
+            
+            @Override
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                // TODO Auto-generated method stub
+                
+                        //Toast.makeText(FileDisplayActivity.this, "Got cclicked"+ adapter.getItem(position),Toast.LENGTH_SHORT);
+                        Log.d("got clicked",shareWithFriends.getItem(position));
+                        
+                    }
+                        
+            
+        });
     }
     
 }

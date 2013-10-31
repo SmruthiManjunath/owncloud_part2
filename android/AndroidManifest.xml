@@ -168,6 +168,7 @@
          <activity android:name=".ui.activity.FacebookFriendSelectDisplay" />
          <activity android:name=".ui.activity.InitialPageActivity"></activity>
          <activity android:name=".ui.activity.DisplayFilesOfflineActivity"/>
+         <activity android:name=".ui.activity.GroupActivity"/>
         <activity android:name=".ui.activity.LogHistoryActivity"/>
         
         <receiver android:name=".files.InstantUploadBroadcastReceiver">

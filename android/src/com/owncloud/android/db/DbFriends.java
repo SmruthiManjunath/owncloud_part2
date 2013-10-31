@@ -16,7 +16,7 @@ import com.owncloud.android.Log_OC;
 public class DbFriends {
     private SQLiteDatabase mDB;
     private OpenerHelper mHelper;
-    private final String mDatabaseName = "ownCloud";
+    private final String mDatabaseName = "ownCloudfriends";
     private final int mDatabaseVersion = 3;
 
     private final String TABLE_YOUR_FRIENDS = "your_friends";
@@ -76,6 +76,16 @@ public class DbFriends {
         return result != -1;
     }
 
+    public ArrayList<String> getFriendList(String account) {
+        Cursor cursor = mDB.query(TABLE_YOUR_FRIENDS, your_friends_cloumns,null,null,null,null,null);
+        cursor.moveToFirst();
+        ArrayList<String> sendFriendList = new ArrayList<String>();
+        while (!cursor.isAfterLast()) {
+          sendFriendList.add(cursor.getString(1));
+          cursor.moveToNext();
+        }
+        return sendFriendList;
+    }
     public List<String> updateFriendStatus(ArrayList<String> friendRequests,String account) {
         ContentValues cv = new ContentValues();
         Cursor cursor = mDB.query(TABLE_YOUR_FRIENDS, your_friends_cloumns,null,null,null,null,null);
