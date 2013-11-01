@@ -33,10 +33,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.app.AlertDialog;
@@ -67,11 +63,19 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.MultiAutoCompleteTextView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,6 +91,7 @@ import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
+import com.owncloud.android.db.DbFriends;
 import com.owncloud.android.files.services.FileDownloader;
 import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileObserverService;
@@ -173,8 +178,10 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
     private String value;
     List<String> todisplay;
     private String url;
+    DbFriends dataSource;
     private NotificationCompat.Builder shareNotifier;
     NotificationManager notificationManager;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log_OC.d(TAG, "onCreate() start");
@@ -196,11 +203,13 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         .setContentTitle("File Shared")
         .setSmallIcon(R.drawable.icon);
        
+        Button shareButton = (Button)findViewById(R.id.shareItem);
         Intent fileShareIntent = new Intent(this,FileDisplayActivity.class);
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, fileShareIntent, 0);
         shareNotifier .setContentIntent(pIntent);
         shareNotifier.setAutoCancel(true);
         notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        dataSource = new DbFriends(this);
         //ContentResolver.setIsSyncable(getAccount(), AccountAuthenticator.AUTHORITY, 1);
         //ContentResolver.setSyncAutomatically(getAccount(), AccountAuthenticator.AUTHORITY,true);
         // broadcast receiver that is called by the service which downloads the
@@ -1554,6 +1563,43 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
     }
 
+    public void shareHandler(View view1) {
+        /*final Dialog dialog = new Dialog(this);
+        
+        
+        final ArrayAdapter<String> shareWithFriends;
+        dialog.setContentView(R.layout.share_file_with);
+        dialog.setTitle("Share");
+        
+        Account account = AccountUtils.getCurrentOwnCloudAccount(FileDisplayActivity.this);
+        String [] accountNames = account.name.split("@");
+        String accountName = null;
+        if(accountNames.length > 2)
+            accountName = accountNames[0]+"@"+accountNames[1];
+        MultiAutoCompleteTextView textView = (MultiAutoCompleteTextView)dialog.findViewById(R.id.autocompleteshare);
+        
+        textView.setThreshold(2);
+        textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+        ArrayList<String> friendList = dataSource.getFriendList(accountName);
+        shareWithFriends = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,friendList);
+        Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
+        //textView.set
+        textView.setAdapter(shareWithFriends);
+        textView.setFocusableInTouchMode(true);
+        dialog.show();
+        textView.setOnItemClickListener(new OnItemClickListener() {
+            
+            @Override
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                // TODO Auto-generated method stub
+                
+                        //Toast.makeText(FileDisplayActivity.this, "Got cclicked"+ adapter.getItem(position),Toast.LENGTH_SHORT);
+                        Log.d("got clicked",shareWithFriends.getItem(position));
+                        
+                    }
+        });*/
+        
+    }
 
     private void onSynchronizeFileOperationFinish(SynchronizeFileOperation operation, RemoteOperationResult result) {
         dismissDialog(DIALOG_SHORT_WAIT);

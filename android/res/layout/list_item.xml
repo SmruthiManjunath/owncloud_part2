@@ -118,6 +118,7 @@
         android:layout_height="25dip"
         android:gravity="right"
         android:text="Share"
+        android:onClick="shareHandler"
         android:textSize="14dip"/>
 
 </LinearLayout>

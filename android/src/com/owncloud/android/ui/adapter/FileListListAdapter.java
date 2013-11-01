@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Vector;
 
 import android.accounts.Account;
+import android.app.Dialog;
 import android.content.Context;
 import android.util.Log;
 import android.view.Gravity;
@@ -77,6 +78,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
         mContext = context;
         mAccount = AccountUtils.getCurrentOwnCloudAccount(mContext);
         mTransferServiceGetter = transferServiceGetter;
+        
     }
 
     @Override
@@ -114,7 +116,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
         View view = convertView;
         if (view == null) {
             LayoutInflater inflator = (LayoutInflater) mContext
@@ -149,7 +151,50 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
             TextView fileSizeV = (TextView) view.findViewById(R.id.file_size);
             TextView lastModV = (TextView) view.findViewById(R.id.last_mod);
             ImageView checkBoxV = (ImageView) view.findViewById(R.id.custom_checkbox);
-            shareButton.setOnClickListener(this);
+            shareButton.setOnClickListener(new OnClickListener() {
+                
+                @Override
+                public void onClick(View v) {
+                    // TODO Auto-generated method stub
+                    Log.d("filelistlstadapter","here sssss");
+                    
+                    final Dialog dialog = new Dialog(mContext);
+                   // int position = arg0;
+                    long gtfi = getItemId(position);
+                    Log.d("wijqower eqrqperk ",gtfi+" ");
+                    final ArrayAdapter<String> shareWithFriends;
+                    dialog.setContentView(R.layout.share_file_with);
+                    dialog.setTitle("Share");
+                    
+                    Account account = AccountUtils.getCurrentOwnCloudAccount(mContext);
+                    String [] accountNames = account.name.split("@");
+                    String accountName = null;
+                    if(accountNames.length > 2)
+                        accountName = accountNames[0]+"@"+accountNames[1];
+                    MultiAutoCompleteTextView textView = (MultiAutoCompleteTextView)dialog.findViewById(R.id.autocompleteshare);
+                    
+                    textView.setThreshold(2);
+                    textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+                    ArrayList<String> friendList = dataSource.getFriendList(accountName);
+                    shareWithFriends = new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,friendList);
+                    Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
+                    //textView.set
+                    textView.setAdapter(shareWithFriends);
+                    textView.setFocusableInTouchMode(true);
+                    dialog.show();
+                    textView.setOnItemClickListener(new OnItemClickListener() {
+                        
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                            // TODO Auto-generated method stub
+                            
+                                    //Toast.makeText(FileDisplayActivity.this, "Got cclicked"+ adapter.getItem(position),Toast.LENGTH_SHORT);
+                                    Log.d("got clicked",shareWithFriends.getItem(position));
+                                    
+                                }
+                    });
+                }
+            });
             if (!file.isDirectory()) {
                 fileSizeV.setVisibility(View.VISIBLE);
                 fileSizeV.setText(DisplayUtils.bytesToHumanReadable(file.getFileLength()));
@@ -229,8 +274,8 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
 
     @Override
     public void onClick(View arg0) {
-        Log.d("filelistlstadapter","here sssss");
-        View view;
+        
+        /*View view;
         PopupWindow windowPopup;
         Account account = AccountUtils.getCurrentOwnCloudAccount(mContext);
         String [] accountNames = account.name.split("@");
@@ -249,7 +294,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
         textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
         ArrayList<String> friendList = dataSource.getFriendList(accountName);
         shareWithFriends = new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,friendList);
-        Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
+        //Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
         textView.setAdapter(shareWithFriends);
         textView.setFocusableInTouchMode(true);
         textView.setOnItemClickListener(new OnItemClickListener() {
@@ -264,7 +309,9 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                     }
                         
             
-        });
+        }); */
+        
+        
     }
     
 }
