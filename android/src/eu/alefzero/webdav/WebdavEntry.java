@@ -42,8 +42,9 @@ public class WebdavEntry {
             DavPropertySet propSet = ms.getProperties(status);
             @SuppressWarnings("rawtypes")
             DavProperty prop = propSet.get(DavPropertyName.DISPLAYNAME);
-            if (prop != null)
+            if (prop != null) {
                 mName = (String) prop.getName().toString();
+            }
             else {
                 String[] tmp = mPath.split("/");
                 if (tmp.length > 0)
@@ -69,6 +70,14 @@ public class WebdavEntry {
                     mContentType = "DIR";   // a specific attribute would be better, but this is enough; unless while we have no reason to distinguish MIME types for folders
                 }
             }
+            prop = propSet.get(DavPropertyName.GETETAG);
+            //propSet.get(DavPropertyName.)
+            
+            //WebDAVProperties.getProperties(String path);
+            /*DavPropertyName[] nam1 = propSet.getPropertyNames();
+            for(int i = 0;i<nam1.length;i++)
+                Log_OC.d("webdav ", nam1[i].getName());
+            Log_OC.d("weebdav entrp", mName+" "+prop.getValue()); */
 
             prop = propSet.get(DavPropertyName.GETCONTENTLENGTH);
             if (prop != null)

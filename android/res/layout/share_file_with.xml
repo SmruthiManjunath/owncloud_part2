@@ -5,11 +5,18 @@
         android:id="@+id/sharefilewith"
         android:orientation="vertical"
          android:background="@android:color/background_light" >
-<MultiAutoCompleteTextView 
+<AutoCompleteTextView 
     android:id="@+id/autocompleteshare"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
 >   
 
-</MultiAutoCompleteTextView>
+    
+</AutoCompleteTextView>
+<Button
+    android:id="@+id/ShareBtn"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="OK"
+    />
 </LinearLayout>

@@ -21,6 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
 import android.accounts.Account;
 import android.app.Dialog;
 import android.content.Context;
@@ -32,6 +42,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AutoCompleteTextView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -53,6 +64,7 @@ import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
 import com.owncloud.android.ui.activity.FileDisplayActivity;
 import com.owncloud.android.ui.activity.TransferServiceGetter;
+import com.owncloud.android.utils.FileStorageUtils;
 
 
 /**
@@ -73,6 +85,10 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
     private Long totalSizeOfDirectoriesRecursive = null;
     private Long lastModifiedOfAllSubdirectories = null;
     private ArrayAdapter<String> shareWithFriends;
+    private static String shareType="0";
+    private static String permissions="17";
+    private String accountName;
+    private String url;
     DbFriends dataSource;
     public FileListListAdapter(Context context, TransferServiceGetter transferServiceGetter) {
         mContext = context;
@@ -128,7 +144,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
             OCFile file = mFiles.get(position);
             TextView fileName = (TextView) view.findViewById(R.id.Filename);
             String name = file.getFileName();
-            Button shareButton = (Button) view.findViewById(R.id.shareItem);
+            ImageView shareButton = (ImageView) view.findViewById(R.id.shareItem);
             fileName.setText(name);
             ImageView fileIcon = (ImageView) view.findViewById(R.id.imageView1);
             fileIcon.setImageResource(DisplayUtils.getResourceId(file.getMimetype()));
@@ -160,22 +176,36 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                     
                     final Dialog dialog = new Dialog(mContext);
                    // int position = arg0;
-                    long gtfi = getItemId(position);
-                    Log.d("wijqower eqrqperk ",gtfi+" ");
+                    final OCFile fileToBeShared = (OCFile) getItem(position);
                     final ArrayAdapter<String> shareWithFriends;
                     dialog.setContentView(R.layout.share_file_with);
                     dialog.setTitle("Share");
-                    
+                    Log.d("ewhqo oieqjoqejruihoh uh =u h ",fileToBeShared.getFileName()+" "+fileToBeShared.getFileId()+" "+fileToBeShared.getParentId());
                     Account account = AccountUtils.getCurrentOwnCloudAccount(mContext);
                     String [] accountNames = account.name.split("@");
-                    String accountName = null;
-                    if(accountNames.length > 2)
-                        accountName = accountNames[0]+"@"+accountNames[1];
-                    MultiAutoCompleteTextView textView = (MultiAutoCompleteTextView)dialog.findViewById(R.id.autocompleteshare);
                     
+                    if(accountNames.length > 2)
+                    {
+                        accountName = accountNames[0]+"@"+accountNames[1];
+                        url = accountNames[2];
+                    }
+                        
+                    final AutoCompleteTextView textView = (AutoCompleteTextView)dialog.findViewById(R.id.autocompleteshare);
+                    Button shareBtn = (Button)dialog.findViewById(R.id.ShareBtn);
                     textView.setThreshold(2);
-                    textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+                    //textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+                    final String itemType;
+                    if(fileToBeShared.isDirectory())
+                        itemType = "folder";
+                    else
+                        itemType="file";
+                    //fileToBeShared.
+                    final String itemSource = String.valueOf(fileToBeShared.getFileId());
+                    //Now it is only members, then will change it to groups
+                   
+                    //Permissions disabled with friends app
                     ArrayList<String> friendList = dataSource.getFriendList(accountName);
+                    dataSource.close();
                     shareWithFriends = new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,friendList);
                     Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
                     //textView.set
@@ -186,13 +216,56 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                         
                         @Override
                         public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                            // TODO Auto-generated method stub
-                            
-                                    //Toast.makeText(FileDisplayActivity.this, "Got cclicked"+ adapter.getItem(position),Toast.LENGTH_SHORT);
-                                    Log.d("got clicked",shareWithFriends.getItem(position));
-                                    
+                                
                                 }
                     });
+                    
+                    shareBtn.setOnClickListener(new OnClickListener() {
+                        
+                        @Override
+                        public void onClick(View v) {
+                            // TODO Auto-generated method stub
+                            final String shareWith = textView.getText().toString();
+                            if(shareWith == null) {
+                                textView.setHint("Share With");
+                            } else {
+                            textView.setText("");
+                            Runnable runnable = new Runnable() {
+                                @Override
+                                public void run() {
+                            HttpPost post = new HttpPost("http://" + url + "/owncloud/androidshare.php");
+                            final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+                            //Log.d("ILEListListAdapter ",itemType+" "+itemSource+" "+shareType+" "+shareWith+" "+accountName);
+                            
+                            //Log.d()
+                            Log.d("fileListListAdapter ",itemType+" "+itemSource+" "+shareType+" "+shareWith+" "+permissions+" "+accountName+" "+fileToBeShared.getFileId());
+
+                            params.add(new BasicNameValuePair("itemType", itemType));
+                            params.add(new BasicNameValuePair("itemSource",itemSource));
+                            params.add(new BasicNameValuePair("shareType",shareType));
+                            params.add(new BasicNameValuePair("shareWith",shareWith));
+                            params.add(new BasicNameValuePair("permission",permissions));
+                            params.add(new BasicNameValuePair("uidOwner",accountName));
+                            HttpEntity entity;
+                            try {
+                                entity = new UrlEncodedFormEntity(params, "utf-8");
+                                HttpClient client = new DefaultHttpClient();
+                                post.setEntity(entity);
+                                HttpResponse response = client.execute(post);
+                                
+                                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                                    HttpEntity entityresponse = response.getEntity();
+                                    Log.d("hiho ohohoh jgh gho ",entityresponse.toString());
+                                } }catch(Exception e) {
+                                    e.printStackTrace();
+                                }
+                                }
+                                };
+                                new Thread(runnable).start();
+                            }
+                        }
+                    });
+                    
                 }
             });
             if (!file.isDirectory()) {

@@ -112,12 +112,12 @@
         android:layout_marginRight="4dp"
         android:gravity=""
         android:src="@android:drawable/checkbox_off_background" />
-    <Button
+    <ImageView
         android:id="@+id/shareItem"
         android:layout_width="wrap_content" 
         android:layout_height="25dip"
         android:gravity="right"
-        android:text="Share"
+        android:src="@drawable/share"
         android:onClick="shareHandler"
         android:textSize="14dip"/>
 

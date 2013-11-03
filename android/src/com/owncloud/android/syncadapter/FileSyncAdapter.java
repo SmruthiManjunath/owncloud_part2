@@ -269,6 +269,7 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
         int i;
         for (i=0; i < files.size() && !mCancellation; i++) {
             OCFile newFile = files.get(i);
+            Log_OC.d("file ", newFile.getFileName()+" "+newFile.getFileId()+" "+newFile.getEtag());
             if (newFile.isDirectory()) {
                 fetchData(newFile.getRemotePath(), newFile.getFileId());
                 
