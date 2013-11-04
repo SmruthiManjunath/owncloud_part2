@@ -200,7 +200,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                     else
                         itemType="file";
                     //fileToBeShared.
-                    final String itemSource = String.valueOf(fileToBeShared.getFileId());
+                    final String itemSource = "files"+String.valueOf(fileToBeShared.getRemotePath());
                     //Now it is only members, then will change it to groups
                    
                     //Permissions disabled with friends app
@@ -235,7 +235,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                                 public void run() {
                             HttpPost post = new HttpPost("http://" + url + "/owncloud/androidshare.php");
                             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-                            //Log.d("ILEListListAdapter ",itemType+" "+itemSource+" "+shareType+" "+shareWith+" "+accountName);
+                            Log.d("ILEListListAdapter ",itemType+" "+itemSource+" "+shareType+" "+shareWith+" "+accountName);
                             
                             //Log.d()
                             Log.d("fileListListAdapter ",itemType+" "+itemSource+" "+shareType+" "+shareWith+" "+permissions+" "+accountName+" "+fileToBeShared.getFileId());

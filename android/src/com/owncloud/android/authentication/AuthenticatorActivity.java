@@ -102,8 +102,9 @@ import eu.alefzero.webdav.WebdavClient;
  * @author Bartek Przybylski
  * @author David A. Velasco
  */
-public class AuthenticatorActivity extends AccountAuthenticatorActivity
-implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeListener, OnEditorActionListener, SsoWebViewClientListener, OnItemSelectedListener{
+public class AuthenticatorActivity extends AccountAuthenticatorActivity implements OnRemoteOperationListener,
+        OnSslValidatorListener, OnFocusChangeListener, OnEditorActionListener, SsoWebViewClientListener,
+        OnItemSelectedListener {
 
     private static final String TAG = AuthenticatorActivity.class.getSimpleName();
 
@@ -120,7 +121,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     private static final String KEY_ACCOUNT = "ACCOUNT";
     private static final String KEY_SERVER_VALID = "SERVER_VALID";
     private static final String KEY_SERVER_CHECKED = "SERVER_CHECKED";
-    private static final String KEY_SERVER_CHECK_IN_PROGRESS = "SERVER_CHECK_IN_PROGRESS"; 
+    private static final String KEY_SERVER_CHECK_IN_PROGRESS = "SERVER_CHECK_IN_PROGRESS";
     private static final String KEY_SERVER_STATUS_TEXT = "SERVER_STATUS_TEXT";
     private static final String KEY_SERVER_STATUS_ICON = "SERVER_STATUS_ICON";
     private static final String KEY_IS_SSL_CONN = "IS_SSL_CONN";
@@ -128,14 +129,14 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     private static final String KEY_AUTH_STATUS_TEXT = "AUTH_STATUS_TEXT";
     private static final String KEY_AUTH_STATUS_ICON = "AUTH_STATUS_ICON";
     private static final String KEY_REFRESH_BUTTON_ENABLED = "KEY_REFRESH_BUTTON_ENABLED";
-    
+
     private static final String KEY_OC_USERNAME_EQUALS = "oc_username=";
     private static final String REGISTER_USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS";
     private static final String REGISTER_USER_SUCCESS = "ACCOUNT_CREATED";
     private static final String AUTH_ON = "on";
     private static final String AUTH_OFF = "off";
     private static final String AUTH_OPTIONAL = "optional";
-    
+
     private static final int DIALOG_LOGIN_PROGRESS = 0;
     private static final int DIALOG_SSL_VALIDATOR = 1;
     private static final int DIALOG_CERT_NOT_SAVED = 2;
@@ -145,14 +146,14 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     public static final byte ACTION_UPDATE_TOKEN = 1;
 
     private static final String TAG_SAML_DIALOG = "samlWebViewDialog";
-    
+
     private String mHostBaseUrl;
     private OwnCloudVersion mDiscoveredVersion;
 
     private String mAuthMessageText;
     private int mAuthMessageVisibility, mServerStatusText, mServerStatusIcon;
     private boolean mServerIsChecked, mServerIsValid, mIsSslConn;
-    private int mAuthStatusText, mAuthStatusIcon;    
+    private int mAuthStatusText, mAuthStatusIcon;
     private TextView mAuthStatusLayout;
 
     private final Handler mHandler = new Handler();
@@ -169,31 +170,30 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     private Account mAccount;
 
     private TextView mAuthMessage;
-    
+
     private EditText mHostUrlInput;
     private boolean mHostUrlInputEnabled;
     private View mRefreshButton;
 
     private String mAuthTokenType;
-    
+
     private EditText mUsernameInput;
     private EditText mPasswordInput;
     private EditText mPasswordInput2;
     private CheckBox mOAuth2Check;
-    
+
     private TextView mOAuthAuthEndpointText;
     private TextView mOAuthTokenEndpointText;
     private Spinner locationSpinner;
     private Object location;
     private SamlWebViewDialog mSamlDialog;
-    
+
     private View mOkButton;
     private Button mRegButton;
-    
+
     private String mAuthToken;
-    
+
     private boolean mResumed; // Control if activity is resumed
-    
 
     /**
      * {@inheritDoc}
@@ -204,43 +204,45 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        
+
         setContentView(R.layout.account_setup);
         mAuthMessage = (TextView) findViewById(R.id.auth_message);
         mHostUrlInput = (EditText) findViewById(R.id.hostUrlInput);
-        mHostUrlInput.setText(getString(R.string.server_url));  // valid although R.string.server_url is an empty string
+        mHostUrlInput.setText(getString(R.string.server_url)); // valid although
+                                                               // R.string.server_url
+                                                               // is an empty
+                                                               // string
         mUsernameInput = (EditText) findViewById(R.id.account_username);
         mPasswordInput = (EditText) findViewById(R.id.account_password);
         mPasswordInput2 = (EditText) findViewById(R.id.account_password2);
-        mOAuthAuthEndpointText = (TextView)findViewById(R.id.oAuthEntryPoint_1);
-        mOAuthTokenEndpointText = (TextView)findViewById(R.id.oAuthEntryPoint_2);
+        mOAuthAuthEndpointText = (TextView) findViewById(R.id.oAuthEntryPoint_1);
+        mOAuthTokenEndpointText = (TextView) findViewById(R.id.oAuthEntryPoint_2);
         mOAuth2Check = (CheckBox) findViewById(R.id.oauth_onOff_check);
         mOkButton = findViewById(R.id.buttonOK);
-        mAuthStatusLayout = (TextView) findViewById(R.id.auth_status_text); 
-        
-        /// set Host Url Input Enabled
+        mAuthStatusLayout = (TextView) findViewById(R.id.auth_status_text);
+
+        // / set Host Url Input Enabled
         mHostUrlInputEnabled = getResources().getBoolean(R.bool.show_server_url_input);
         locationSpinner = (Spinner) findViewById(R.id.spinner1);
 
-        /// complete label for 'register account' button
+        // / complete label for 'register account' button
         Button b = (Button) findViewById(R.id.account_register);
         if (b != null) {
             b.setText(String.format(getString(R.string.auth_register), getString(R.string.app_name)));
         }
 
-        /// initialization
+        // / initialization
         mAccountMgr = AccountManager.get(this);
         mNewCapturedUriFromOAuth2Redirection = null;
-        mAction = getIntent().getByteExtra(EXTRA_ACTION, ACTION_CREATE); 
+        mAction = getIntent().getByteExtra(EXTRA_ACTION, ACTION_CREATE);
         mAccount = null;
         mHostBaseUrl = "";
         location = locationSpinner.getSelectedItem();
-        //locationSpinner.setOnItemSelectedListener(this);
+        // locationSpinner.setOnItemSelectedListener(this);
         boolean refreshButtonEnabled = false;
-        
+
         // URL input configuration applied
-        if (!mHostUrlInputEnabled)
-        {
+        if (!mHostUrlInputEnabled) {
             findViewById(R.id.hostUrlFrame).setVisibility(View.GONE);
             mRefreshButton = findViewById(R.id.centeredRefreshButton);
 
@@ -250,7 +252,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
         if (savedInstanceState == null) {
             mResumed = false;
-            /// connection state and info
+            // / connection state and info
             mAuthMessageVisibility = View.GONE;
             mServerStatusText = mServerStatusIcon = 0;
             mServerIsValid = false;
@@ -258,32 +260,33 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             mIsSslConn = false;
             mAuthStatusText = mAuthStatusIcon = 0;
 
-            /// retrieve extras from intent
+            // / retrieve extras from intent
             mAccount = getIntent().getExtras().getParcelable(EXTRA_ACCOUNT);
-            
+
             if (mAccount != null) {
                 String ocVersion = mAccountMgr.getUserData(mAccount, AccountAuthenticator.KEY_OC_VERSION);
-                Log.d("!!!!!!!!!!!!!!!!!!!!!!!!! ",mAccount.name);
+                Log.d("!!!!!!!!!!!!!!!!!!!!!!!!! ", mAccount.name);
                 if (ocVersion != null) {
                     mDiscoveredVersion = new OwnCloudVersion(ocVersion);
                 }
                 mHostBaseUrl = normalizeUrl(mAccountMgr.getUserData(mAccount, AccountAuthenticator.KEY_OC_BASE_URL));
                 mHostUrlInput.setText(mHostBaseUrl);
-                
+
                 String userName = mAccount.name.substring(0, mAccount.name.lastIndexOf('@'));
-                Log.d("!!!!!!!!!!!!!!!!!!!!!!!!!4234 ",userName);
+                Log.d("!!!!!!!!!!!!!!!!!!!!!!!!!4234 ", userName);
                 mUsernameInput.setText(userName);
             }
-            initAuthorizationMethod();  // checks intent and setup.xml to determine mCurrentAuthorizationMethod
+            initAuthorizationMethod(); // checks intent and setup.xml to
+                                       // determine mCurrentAuthorizationMethod
             mJustCreated = true;
-            
+
             if (mAction == ACTION_UPDATE_TOKEN || !mHostUrlInputEnabled) {
-                checkOcServer(); 
+                checkOcServer();
             }
-            
+
         } else {
             mResumed = true;
-            /// connection state and info
+            // / connection state and info
             mAuthMessageVisibility = savedInstanceState.getInt(KEY_AUTH_MESSAGE_VISIBILITY);
             mAuthMessageText = savedInstanceState.getString(KEY_AUTH_MESSAGE_TEXT);
             mServerIsValid = savedInstanceState.getBoolean(KEY_SERVER_VALID);
@@ -296,8 +299,8 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             if (savedInstanceState.getBoolean(KEY_PASSWORD_VISIBLE, false)) {
                 showPassword();
             }
-            
-            /// server data
+
+            // / server data
             String ocVersion = savedInstanceState.getString(KEY_OC_VERSION);
             if (ocVersion != null) {
                 mDiscoveredVersion = new OwnCloudVersion(ocVersion);
@@ -306,55 +309,59 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
             // account data, if updating
             mAccount = savedInstanceState.getParcelable(KEY_ACCOUNT);
-            //Log.d("////////////////// ",mAccount.name);
+            // Log.d("////////////////// ",mAccount.name);
             mAuthTokenType = savedInstanceState.getString(AccountAuthenticator.KEY_AUTH_TOKEN_TYPE);
             if (mAuthTokenType == null) {
-                mAuthTokenType =  AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD;
-                
+                mAuthTokenType = AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD;
+
             }
 
             // check if server check was interrupted by a configuration change
             if (savedInstanceState.getBoolean(KEY_SERVER_CHECK_IN_PROGRESS, false)) {
                 checkOcServer();
-            }            
-            
+            }
+
             // refresh button enabled
             refreshButtonEnabled = savedInstanceState.getBoolean(KEY_REFRESH_BUTTON_ENABLED);
-            
 
         }
 
-        if (mAuthMessageVisibility== View.VISIBLE) {
+        if (mAuthMessageVisibility == View.VISIBLE) {
             showAuthMessage(mAuthMessageText);
-        }
-        else {
+        } else {
             hideAuthMessage();
         }
         adaptViewAccordingToAuthenticationMethod();
         showServerStatus();
         showAuthStatus();
-        
+
         if (mAction == ACTION_UPDATE_TOKEN) {
-            /// lock things that should not change
+            // / lock things that should not change
             mHostUrlInput.setEnabled(false);
             mHostUrlInput.setFocusable(false);
             mUsernameInput.setEnabled(false);
             mUsernameInput.setFocusable(false);
             mOAuth2Check.setVisibility(View.GONE);
         }
-        
-        //if (mServerIsChecked && !mServerIsValid && mRefreshButtonEnabled) showRefreshButton();
-        if (mServerIsChecked && !mServerIsValid && refreshButtonEnabled) showRefreshButton();
-        mOkButton.setEnabled(mServerIsValid); // state not automatically recovered in configuration changes
 
-        if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType) || 
-                !AUTH_OPTIONAL.equals(getString(R.string.auth_method_oauth2))) {
+        // if (mServerIsChecked && !mServerIsValid && mRefreshButtonEnabled)
+        // showRefreshButton();
+        if (mServerIsChecked && !mServerIsValid && refreshButtonEnabled)
+            showRefreshButton();
+        mOkButton.setEnabled(mServerIsValid); // state not automatically
+                                              // recovered in configuration
+                                              // changes
+
+        if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)
+                || !AUTH_OPTIONAL.equals(getString(R.string.auth_method_oauth2))) {
             mOAuth2Check.setVisibility(View.GONE);
         }
 
-        mPasswordInput.setText("");     // clean password to avoid social hacking (disadvantage: password in removed if the device is turned aside)
+        mPasswordInput.setText(""); // clean password to avoid social hacking
+                                    // (disadvantage: password in removed if the
+                                    // device is turned aside)
 
-        /// bind view elements to listeners and other friends
+        // / bind view elements to listeners and other friends
         mHostUrlInput.setOnFocusChangeListener(this);
         mHostUrlInput.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         mHostUrlInput.setOnEditorActionListener(this);
@@ -376,12 +383,12 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
                 if (!mResumed) {
                     mAuthStatusIcon = 0;
                     mAuthStatusText = 0;
-                    showAuthStatus();                    
+                    showAuthStatus();
                 }
                 mResumed = false;
             }
         });
-        
+
         mPasswordInput.setOnFocusChangeListener(this);
         mPasswordInput.setImeOptions(EditorInfo.IME_ACTION_DONE);
         mPasswordInput.setOnEditorActionListener(this);
@@ -394,13 +401,13 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
                 return true;
             }
         });
-        
+
         findViewById(R.id.scroll).setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType) &&
-                            mHostUrlInput.hasFocus()) {
+                    if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)
+                            && mHostUrlInput.hasFocus()) {
                         checkOcServer();
                     }
                 }
@@ -408,25 +415,27 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             }
         });
     }
-    
+
     private void initAuthorizationMethod() {
         boolean oAuthRequired = false;
         boolean samlWebSsoRequired = false;
 
         mAuthTokenType = getIntent().getExtras().getString(AccountAuthenticator.KEY_AUTH_TOKEN_TYPE);
         mAccount = getIntent().getExtras().getParcelable(EXTRA_ACCOUNT);
-        // TODO could be a good moment to validate the received token type, if not null
-        
-        if (mAuthTokenType == null) {    
+        // TODO could be a good moment to validate the received token type, if
+        // not null
+
+        if (mAuthTokenType == null) {
             if (mAccount != null) {
-                /// same authentication method than the one used to create the account to update
+                // / same authentication method than the one used to create the
+                // account to update
                 oAuthRequired = (mAccountMgr.getUserData(mAccount, AccountAuthenticator.KEY_SUPPORTS_OAUTH2) != null);
                 samlWebSsoRequired = (mAccountMgr.getUserData(mAccount, AccountAuthenticator.KEY_SUPPORTS_SAML_WEB_SSO) != null);
-            
+
             } else {
-                /// use the one set in setup.xml
+                // / use the one set in setup.xml
                 oAuthRequired = AUTH_ON.equals(getString(R.string.auth_method_oauth2));
-                samlWebSsoRequired = AUTH_ON.equals(getString(R.string.auth_method_saml_web_sso));            
+                samlWebSsoRequired = AUTH_ON.equals(getString(R.string.auth_method_saml_web_sso));
             }
             if (oAuthRequired) {
                 mAuthTokenType = AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN;
@@ -436,22 +445,23 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
                 mAuthTokenType = AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD;
             }
         }
-    
+
         if (mAccount != null) {
             String userName = mAccount.name.substring(0, mAccount.name.lastIndexOf('@'));
-            Log.d("mAccount ",mAccount.name);
+            Log.d("mAccount ", mAccount.name);
             mUsernameInput.setText(userName);
         }
-        
+
         mOAuth2Check.setChecked(AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType));
-        
+
     }
 
     /**
      * Saves relevant state before {@link #onPause()}
      * 
-     * Do NOT save {@link #mNewCapturedUriFromOAuth2Redirection}; it keeps a temporal flag, intended to defer the 
-     * processing of the redirection caught in {@link #onNewIntent(Intent)} until {@link #onResume()} 
+     * Do NOT save {@link #mNewCapturedUriFromOAuth2Redirection}; it keeps a
+     * temporal flag, intended to defer the processing of the redirection caught
+     * in {@link #onNewIntent(Intent)} until {@link #onResume()}
      * 
      * See {@link #loadSavedInstanceState(Bundle)}
      */
@@ -459,7 +469,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        /// connection state and info
+        // / connection state and info
         outState.putInt(KEY_AUTH_MESSAGE_VISIBILITY, mAuthMessage.getVisibility());
         outState.putString(KEY_AUTH_MESSAGE_TEXT, mAuthMessage.getText().toString());
         outState.putInt(KEY_SERVER_STATUS_TEXT, mServerStatusText);
@@ -472,34 +482,32 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         outState.putInt(KEY_AUTH_STATUS_ICON, mAuthStatusIcon);
         outState.putInt(KEY_AUTH_STATUS_TEXT, mAuthStatusText);
 
-        /// server data
+        // / server data
         if (mDiscoveredVersion != null) {
             outState.putString(KEY_OC_VERSION, mDiscoveredVersion.toString());
         }
         outState.putString(KEY_HOST_URL_TEXT, mHostBaseUrl);
 
-        /// account data, if updating
+        // / account data, if updating
         if (mAccount != null) {
             outState.putParcelable(KEY_ACCOUNT, mAccount);
         }
         outState.putString(AccountAuthenticator.KEY_AUTH_TOKEN_TYPE, mAuthTokenType);
-        
+
         // refresh button enabled
         outState.putBoolean(KEY_REFRESH_BUTTON_ENABLED, (mRefreshButton.getVisibility() == View.VISIBLE));
-        
 
     }
 
-
     /**
-     * The redirection triggered by the OAuth authentication server as response to the GET AUTHORIZATION request
-     * is caught here.
+     * The redirection triggered by the OAuth authentication server as response
+     * to the GET AUTHORIZATION request is caught here.
      * 
-     * To make this possible, this activity needs to be qualified with android:launchMode = "singleTask" in the
-     * AndroidManifest.xml file.
+     * To make this possible, this activity needs to be qualified with
+     * android:launchMode = "singleTask" in the AndroidManifest.xml file.
      */
     @Override
-    protected void onNewIntent (Intent intent) {
+    protected void onNewIntent(Intent intent) {
         Log_OC.d(TAG, "onNewIntent()");
         Uri data = intent.getData();
         if (data != null && data.toString().startsWith(getString(R.string.oauth2_redirect_uri))) {
@@ -507,72 +515,71 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     /**
-     * The redirection triggered by the OAuth authentication server as response to the GET AUTHORIZATION, and 
-     * deferred in {@link #onNewIntent(Intent)}, is processed here.
+     * The redirection triggered by the OAuth authentication server as response
+     * to the GET AUTHORIZATION, and deferred in {@link #onNewIntent(Intent)},
+     * is processed here.
      */
     @Override
     protected void onResume() {
         super.onResume();
         if (mAction == ACTION_UPDATE_TOKEN && mJustCreated && getIntent().getBooleanExtra(EXTRA_ENFORCED_UPDATE, false)) {
             if (AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType)) {
-                //Toast.makeText(this, R.string.auth_expired_oauth_token_toast, Toast.LENGTH_LONG).show();
+                // Toast.makeText(this, R.string.auth_expired_oauth_token_toast,
+                // Toast.LENGTH_LONG).show();
                 showAuthMessage(getString(R.string.auth_expired_oauth_token_toast));
             } else if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
-                //Toast.makeText(this, R.string.auth_expired_saml_sso_token_toast, Toast.LENGTH_LONG).show();
+                // Toast.makeText(this,
+                // R.string.auth_expired_saml_sso_token_toast,
+                // Toast.LENGTH_LONG).show();
                 showAuthMessage(getString(R.string.auth_expired_saml_sso_token_toast));
             } else {
-                //Toast.makeText(this, R.string.auth_expired_basic_auth_toast, Toast.LENGTH_LONG).show();
+                // Toast.makeText(this, R.string.auth_expired_basic_auth_toast,
+                // Toast.LENGTH_LONG).show();
                 showAuthMessage(getString(R.string.auth_expired_basic_auth_toast));
             }
         }
 
         if (mNewCapturedUriFromOAuth2Redirection != null) {
-            getOAuth2AccessTokenFromCapturedRedirection();            
+            getOAuth2AccessTokenFromCapturedRedirection();
         }
 
         mJustCreated = false;
-        
+
     }
 
-    
-    
-    
-
     /**
-     * Parses the redirection with the response to the GET AUTHORIZATION request to the 
-     * oAuth server and requests for the access token (GET ACCESS TOKEN)
+     * Parses the redirection with the response to the GET AUTHORIZATION request
+     * to the oAuth server and requests for the access token (GET ACCESS TOKEN)
      */
     private void getOAuth2AccessTokenFromCapturedRedirection() {
-        /// Parse data from OAuth redirection
+        // / Parse data from OAuth redirection
         String queryParameters = mNewCapturedUriFromOAuth2Redirection.getQuery();
         mNewCapturedUriFromOAuth2Redirection = null;
 
-        /// Showing the dialog with instructions for the user.
+        // / Showing the dialog with instructions for the user.
         showDialog(DIALOG_OAUTH2_LOGIN_PROGRESS);
 
-        /// GET ACCESS TOKEN to the oAuth server 
-        RemoteOperation operation = new OAuth2GetAccessToken(   getString(R.string.oauth2_client_id), 
-                getString(R.string.oauth2_redirect_uri),       
-                getString(R.string.oauth2_grant_type),
-                queryParameters);
-        //WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(getString(R.string.oauth2_url_endpoint_access)), getApplicationContext());
-        WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mOAuthTokenEndpointText.getText().toString().trim()), getApplicationContext(), true);
+        // / GET ACCESS TOKEN to the oAuth server
+        RemoteOperation operation = new OAuth2GetAccessToken(getString(R.string.oauth2_client_id),
+                getString(R.string.oauth2_redirect_uri), getString(R.string.oauth2_grant_type), queryParameters);
+        // WebdavClient client =
+        // OwnCloudClientUtils.createOwnCloudClient(Uri.parse(getString(R.string.oauth2_url_endpoint_access)),
+        // getApplicationContext());
+        WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(
+                Uri.parse(mOAuthTokenEndpointText.getText().toString().trim()), getApplicationContext(), true);
         operation.execute(client, this, mHandler);
     }
 
-
-
     /**
-     * Handles the change of focus on the text inputs for the server URL and the password
+     * Handles the change of focus on the text inputs for the server URL and the
+     * password
      */
     public void onFocusChange(View view, boolean hasFocus) {
-        if (view.getId() == R.id.hostUrlInput) {   
+        if (view.getId() == R.id.hostUrlInput) {
             if (!hasFocus) {
                 onUrlInputFocusLost((TextView) view);
-            }
-            else {
+            } else {
                 hideRefreshButton();
             }
 
@@ -581,17 +588,17 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     /**
      * Handles changes in focus on the text input for the server URL.
      * 
-     * IMPORTANT ENTRY POINT 2: When (!hasFocus), user wrote the server URL and changed to 
-     * other field. The operation to check the existence of the server in the entered URL is
-     * started. 
+     * IMPORTANT ENTRY POINT 2: When (!hasFocus), user wrote the server URL and
+     * changed to other field. The operation to check the existence of the
+     * server in the entered URL is started.
      * 
-     * When hasFocus:    user 'comes back' to write again the server URL.
+     * When hasFocus: user 'comes back' to write again the server URL.
      * 
-     * @param hostInput     TextView with the URL input field receiving the change of focus.
+     * @param hostInput TextView with the URL input field receiving the change
+     *            of focus.
      */
     private void onUrlInputFocusLost(TextView hostInput) {
         if (!mHostBaseUrl.equals(normalizeUrl(mHostUrlInput.getText().toString()))) {
@@ -603,21 +610,22 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             }
         }
     }
+
     public void callonRefresh(String s1) {
         checkOcServer(s1);
     }
 
     private void checkOcServer(String... urlServer) {
         String uri;
-        if(urlServer.length > 0) {
+        if (urlServer.length > 0) {
             uri = urlServer[0];
         } else {
             uri = trimUrlWebdav(mHostUrlInput.getText().toString().trim());
         }
-        if (!mHostUrlInputEnabled){
+        if (!mHostUrlInputEnabled) {
             uri = getString(R.string.server_url);
         }
-        
+
         mServerIsValid = false;
         mServerIsChecked = false;
         mOkButton.setEnabled(false);
@@ -627,7 +635,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             mServerStatusText = R.string.auth_testing_connection;
             mServerStatusIcon = R.drawable.progress_small;
             showServerStatus();
-            mOcServerChkOperation = new  OwnCloudServerCheckOperation(uri, this);
+            mOcServerChkOperation = new OwnCloudServerCheckOperation(uri, this);
             WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(uri), this, true);
             mOperationThread = mOcServerChkOperation.execute(client, this, mHandler);
         } else {
@@ -637,16 +645,18 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     /**
-     * Handles changes in focus on the text input for the password (basic authorization).
+     * Handles changes in focus on the text input for the password (basic
+     * authorization).
      * 
      * When (hasFocus), the button to toggle password visibility is shown.
      * 
-     * When (!hasFocus), the button is made invisible and the password is hidden.
+     * When (!hasFocus), the button is made invisible and the password is
+     * hidden.
      * 
-     * @param passwordInput    TextView with the password input field receiving the change of focus.
-     * @param hasFocus          'True' if focus is received, 'false' if is lost
+     * @param passwordInput TextView with the password input field receiving the
+     *            change of focus.
+     * @param hasFocus 'True' if focus is received, 'false' if is lost
      */
     private void onPasswordFocusChanged(TextView passwordInput, boolean hasFocus) {
         if (hasFocus) {
@@ -657,12 +667,11 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     private void showViewPasswordButton() {
-        //int drawable = android.R.drawable.ic_menu_view;
+        // int drawable = android.R.drawable.ic_menu_view;
         int drawable = R.drawable.ic_view;
         if (isPasswordVisible()) {
-            //drawable = android.R.drawable.ic_secure;
+            // drawable = android.R.drawable.ic_secure;
             drawable = R.drawable.ic_hide;
         }
         mPasswordInput.setCompoundDrawablesWithIntrinsicBounds(0, 0, drawable, 0);
@@ -671,7 +680,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     private boolean isPasswordVisible() {
         return ((mPasswordInput.getInputType() & InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
     }
-    
+
     private void hidePasswordButton() {
         mPasswordInput.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
     }
@@ -680,28 +689,27 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         mPasswordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
         showViewPasswordButton();
     }
-    
+
     private void hidePassword() {
         mPasswordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         showViewPasswordButton();
     }
-    
-    
+
     /**
      * Cancels the authenticator activity
      * 
-     * IMPORTANT ENTRY POINT 3: Never underestimate the importance of cancellation
+     * IMPORTANT ENTRY POINT 3: Never underestimate the importance of
+     * cancellation
      * 
      * This method is bound in the layout/acceoun_setup.xml resource file.
      * 
-     * @param view      Cancel button
+     * @param view Cancel button
      */
     public void onCancelClick(View view) {
-        setResult(RESULT_CANCELED);     // TODO review how is this related to AccountAuthenticator (debugging)
+        setResult(RESULT_CANCELED); // TODO review how is this related to
+                                    // AccountAuthenticator (debugging)
         finish();
     }
-
-
 
     /**
      * Checks the credentials of the user in the root of the ownCloud server
@@ -710,88 +718,88 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
      * For basic authorization, a check of existence of the root folder is
      * performed.
      * 
-     * For OAuth, starts the flow to get an access token; the credentials test 
+     * For OAuth, starts the flow to get an access token; the credentials test
      * is postponed until it is available.
      * 
      * IMPORTANT ENTRY POINT 4
      * 
-     * @param view      OK button
+     * @param view OK button
      */
     public void onOkClick(View view) {
         // this check should be unnecessary
-        if (mDiscoveredVersion == null || !mDiscoveredVersion.isVersionValid()  || mHostBaseUrl == null || mHostBaseUrl.length() == 0) {
+        if (mDiscoveredVersion == null || !mDiscoveredVersion.isVersionValid() || mHostBaseUrl == null
+                || mHostBaseUrl.length() == 0) {
             mServerStatusIcon = R.drawable.common_error;
             mServerStatusText = R.string.auth_wtf_reenter_URL;
             showServerStatus();
             mOkButton.setEnabled(false);
-            Log_OC.wtf(TAG,  "The user was allowed to click 'connect' to an unchecked server!!");
+            Log_OC.wtf(TAG, "The user was allowed to click 'connect' to an unchecked server!!");
             return;
         }
 
         if (AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType)) {
             startOauthorization();
-        } else if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) { 
+        } else if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
             startSamlBasedFederatedSingleSignOnAuthorization();
         } else {
             checkBasicAuthorization();
         }
     }
 
-
     /**
-     * Tests the credentials entered by the user performing a check of existence on 
-     * the root folder of the ownCloud server.
+     * Tests the credentials entered by the user performing a check of existence
+     * on the root folder of the ownCloud server.
      */
     private void checkBasicAuthorization() {
-        /// get the path to the root folder through WebDAV from the version server
+        // / get the path to the root folder through WebDAV from the version
+        // server
         String webdav_path = AccountUtils.getWebdavPath(mDiscoveredVersion, mAuthTokenType);
 
-        /// get basic credentials entered by user
+        // / get basic credentials entered by user
         String username = mUsernameInput.getText().toString();
-        username = username+"@"+location;
+        username = username + "@" + location;
         String password = mPasswordInput.getText().toString();
 
-        /// be gentle with the user
+        // / be gentle with the user
         showDialog(DIALOG_LOGIN_PROGRESS);
 
-        /// test credentials accessing the root folder
-        mAuthCheckOperation = new  ExistenceCheckOperation("", this, false);
-        WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this, true);
+        // / test credentials accessing the root folder
+        mAuthCheckOperation = new ExistenceCheckOperation("", this, false);
+        WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this,
+                true);
         client.setBasicCredentials(username, password);
         mOperationThread = mAuthCheckOperation.execute(client, this, mHandler);
     }
 
-
     /**
-     * Starts the OAuth 'grant type' flow to get an access token, with 
-     * a GET AUTHORIZATION request to the BUILT-IN authorization server. 
+     * Starts the OAuth 'grant type' flow to get an access token, with a GET
+     * AUTHORIZATION request to the BUILT-IN authorization server.
      */
     private void startOauthorization() {
         // be gentle with the user
         mAuthStatusIcon = R.drawable.progress_small;
         mAuthStatusText = R.string.oauth_login_connection;
         showAuthStatus();
-        
 
         // GET AUTHORIZATION request
-        //Uri uri = Uri.parse(getString(R.string.oauth2_url_endpoint_auth));
+        // Uri uri = Uri.parse(getString(R.string.oauth2_url_endpoint_auth));
         Uri uri = Uri.parse(mOAuthAuthEndpointText.getText().toString().trim());
         Uri.Builder uriBuilder = uri.buildUpon();
         uriBuilder.appendQueryParameter(OAuth2Constants.KEY_RESPONSE_TYPE, getString(R.string.oauth2_response_type));
-        uriBuilder.appendQueryParameter(OAuth2Constants.KEY_REDIRECT_URI, getString(R.string.oauth2_redirect_uri));   
+        uriBuilder.appendQueryParameter(OAuth2Constants.KEY_REDIRECT_URI, getString(R.string.oauth2_redirect_uri));
         uriBuilder.appendQueryParameter(OAuth2Constants.KEY_CLIENT_ID, getString(R.string.oauth2_client_id));
         uriBuilder.appendQueryParameter(OAuth2Constants.KEY_SCOPE, getString(R.string.oauth2_scope));
-        //uriBuilder.appendQueryParameter(OAuth2Constants.KEY_STATE, whateverwewant);
+        // uriBuilder.appendQueryParameter(OAuth2Constants.KEY_STATE,
+        // whateverwewant);
         uri = uriBuilder.build();
         Log_OC.d(TAG, "Starting browser to view " + uri.toString());
         Intent i = new Intent(Intent.ACTION_VIEW, uri);
         startActivity(i);
     }
 
-
     /**
-     * Starts the Web Single Sign On flow to get access to the root folder
-     * in the server.
+     * Starts the Web Single Sign On flow to get access to the root folder in
+     * the server.
      */
     private void startSamlBasedFederatedSingleSignOnAuthorization() {
         // be gentle with the user
@@ -799,19 +807,22 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         mAuthStatusText = R.string.auth_connecting_auth_server;
         showAuthStatus();
         showDialog(DIALOG_LOGIN_PROGRESS);
-        
-        /// get the path to the root folder through WebDAV from the version server
+
+        // / get the path to the root folder through WebDAV from the version
+        // server
         String webdav_path = AccountUtils.getWebdavPath(mDiscoveredVersion, mAuthTokenType);
 
-        /// test credentials accessing the root folder
-        mAuthCheckOperation = new  ExistenceCheckOperation("", this, false);
-        WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this, false);
+        // / test credentials accessing the root folder
+        mAuthCheckOperation = new ExistenceCheckOperation("", this, false);
+        WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this,
+                false);
         mOperationThread = mAuthCheckOperation.execute(client, this, mHandler);
-      
+
     }
 
     /**
-     * Callback method invoked when a RemoteOperation executed by this Activity finishes.
+     * Callback method invoked when a RemoteOperation executed by this Activity
+     * finishes.
      * 
      * Dispatches the operation flow to the right method.
      */
@@ -822,63 +833,63 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             onOcServerCheckFinish((OwnCloudServerCheckOperation) operation, result);
 
         } else if (operation instanceof OAuth2GetAccessToken) {
-            onGetOAuthAccessTokenFinish((OAuth2GetAccessToken)operation, result);
+            onGetOAuthAccessTokenFinish((OAuth2GetAccessToken) operation, result);
 
-        } else if (operation instanceof ExistenceCheckOperation)  {
+        } else if (operation instanceof ExistenceCheckOperation) {
             if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
                 onSamlBasedFederatedSingleSignOnAuthorizationStart(operation, result);
-                
+
             } else {
-                onAuthorizationCheckFinish((ExistenceCheckOperation)operation, result);
+                onAuthorizationCheckFinish((ExistenceCheckOperation) operation, result);
             }
         }
     }
-    
-    
-    private void onSamlBasedFederatedSingleSignOnAuthorizationStart(RemoteOperation operation, RemoteOperationResult result) {
+
+    private void onSamlBasedFederatedSingleSignOnAuthorizationStart(RemoteOperation operation,
+            RemoteOperationResult result) {
         try {
             dismissDialog(DIALOG_LOGIN_PROGRESS);
         } catch (IllegalArgumentException e) {
-            // NOTHING TO DO ; can't find out what situation that leads to the exception in this code, but user logs signal that it happens
+            // NOTHING TO DO ; can't find out what situation that leads to the
+            // exception in this code, but user logs signal that it happens
         }
-        
-        //if (result.isTemporalRedirection() && result.isIdPRedirection()) {
+
+        // if (result.isTemporalRedirection() && result.isIdPRedirection()) {
         if (result.isIdPRedirection()) {
             String url = result.getRedirectedLocation();
             String targetUrl = mHostBaseUrl + AccountUtils.getWebdavPath(mDiscoveredVersion, mAuthTokenType);
-            
+
             // Show dialog
-            mSamlDialog = SamlWebViewDialog.newInstance(url, targetUrl);            
+            mSamlDialog = SamlWebViewDialog.newInstance(url, targetUrl);
             mSamlDialog.show(getSupportFragmentManager(), TAG_SAML_DIALOG);
-            
+
             mAuthStatusIcon = 0;
             mAuthStatusText = 0;
-            
+
         } else {
             mAuthStatusIcon = R.drawable.common_error;
             mAuthStatusText = R.string.auth_unsupported_auth_method;
-            
+
         }
         showAuthStatus();
     }
 
-
     /**
-     * Processes the result of the server check performed when the user finishes the enter of the
-     * server URL.
+     * Processes the result of the server check performed when the user finishes
+     * the enter of the server URL.
      * 
-     * @param operation     Server check performed.
-     * @param result        Result of the check.
+     * @param operation Server check performed.
+     * @param result Result of the check.
      */
     private void onOcServerCheckFinish(OwnCloudServerCheckOperation operation, RemoteOperationResult result) {
         if (operation.equals(mOcServerChkOperation)) {
-            /// save result state
+            // / save result state
             mServerIsChecked = true;
             mServerIsValid = result.isSuccess();
             mIsSslConn = (result.getCode() == ResultCode.OK_SSL);
             mOcServerChkOperation = null;
 
-            /// update status icon and text
+            // / update status icon and text
             if (mServerIsValid) {
                 hideRefreshButton();
             } else {
@@ -887,29 +898,29 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             updateServerStatusIconAndText(result);
             showServerStatus();
 
-            /// very special case (TODO: move to a common place for all the remote operations)
+            // / very special case (TODO: move to a common place for all the
+            // remote operations)
             if (result.getCode() == ResultCode.SSL_RECOVERABLE_PEER_UNVERIFIED) {
                 mLastSslUntrustedServerResult = result;
-                showDialog(DIALOG_SSL_VALIDATOR); 
+                showDialog(DIALOG_SSL_VALIDATOR);
             }
 
-            /// retrieve discovered version and normalize server URL
+            // / retrieve discovered version and normalize server URL
             mDiscoveredVersion = operation.getDiscoveredVersion();
             mHostBaseUrl = normalizeUrl(mHostUrlInput.getText().toString());
 
-            /// allow or not the user try to access the server
+            // / allow or not the user try to access the server
             mOkButton.setEnabled(mServerIsValid);
 
-        }   // else nothing ; only the last check operation is considered; 
-        // multiple can be triggered if the user amends a URL before a previous check can be triggered
+        } // else nothing ; only the last check operation is considered;
+        // multiple can be triggered if the user amends a URL before a previous
+        // check can be triggered
     }
-
 
     private String normalizeUrl(String url) {
         if (url != null && url.length() > 0) {
             url = url.trim();
-            if (!url.toLowerCase().startsWith("http://") &&
-                    !url.toLowerCase().startsWith("https://")) {
+            if (!url.toLowerCase().startsWith("http://") && !url.toLowerCase().startsWith("https://")) {
                 if (mIsSslConn) {
                     url = "https://" + url;
                 } else {
@@ -917,7 +928,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
                 }
             }
 
-            // OC-208: Add suffix remote.php/webdav to normalize (OC-34)            
+            // OC-208: Add suffix remote.php/webdav to normalize (OC-34)
             url = trimUrlWebdav(url);
 
             if (url.endsWith("/")) {
@@ -928,26 +939,26 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         return (url != null ? url : "");
     }
 
-
-    private String trimUrlWebdav(String url){       
-        if(url.toLowerCase().endsWith(AccountUtils.WEBDAV_PATH_4_0)){
-            url = url.substring(0, url.length() - AccountUtils.WEBDAV_PATH_4_0.length());             
-        } else if(url.toLowerCase().endsWith(AccountUtils.WEBDAV_PATH_2_0)){
-            url = url.substring(0, url.length() - AccountUtils.WEBDAV_PATH_2_0.length());             
-        } else if (url.toLowerCase().endsWith(AccountUtils.WEBDAV_PATH_1_2)){
-            url = url.substring(0, url.length() - AccountUtils.WEBDAV_PATH_1_2.length());             
-        } 
+    private String trimUrlWebdav(String url) {
+        if (url.toLowerCase().endsWith(AccountUtils.WEBDAV_PATH_4_0)) {
+            url = url.substring(0, url.length() - AccountUtils.WEBDAV_PATH_4_0.length());
+        } else if (url.toLowerCase().endsWith(AccountUtils.WEBDAV_PATH_2_0)) {
+            url = url.substring(0, url.length() - AccountUtils.WEBDAV_PATH_2_0.length());
+        } else if (url.toLowerCase().endsWith(AccountUtils.WEBDAV_PATH_1_2)) {
+            url = url.substring(0, url.length() - AccountUtils.WEBDAV_PATH_1_2.length());
+        }
         return (url != null ? url : "");
     }
-    
-    
+
     /**
-     * Chooses the right icon and text to show to the user for the received operation result.
+     * Chooses the right icon and text to show to the user for the received
+     * operation result.
      * 
-     * @param result    Result of a remote operation performed in this activity
+     * @param result Result of a remote operation performed in this activity
      */
     private void updateServerStatusIconAndText(RemoteOperationResult result) {
-        mServerStatusIcon = R.drawable.common_error;    // the most common case in the switch below
+        mServerStatusIcon = R.drawable.common_error; // the most common case in
+                                                     // the switch below
 
         switch (result.getCode()) {
         case OK_SSL:
@@ -957,7 +968,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
         case OK_NO_SSL:
         case OK:
-            if (mHostUrlInput.getText().toString().trim().toLowerCase().startsWith("http://") ) {
+            if (mHostUrlInput.getText().toString().trim().toLowerCase().startsWith("http://")) {
                 mServerStatusText = R.string.auth_connection_established;
                 mServerStatusIcon = R.drawable.ic_ok;
             } else {
@@ -1017,14 +1028,15 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     /**
-     * Chooses the right icon and text to show to the user for the received operation result.
+     * Chooses the right icon and text to show to the user for the received
+     * operation result.
      * 
-     * @param result    Result of a remote operation performed in this activity
+     * @param result Result of a remote operation performed in this activity
      */
     private void updateAuthStatusIconAndText(RemoteOperationResult result) {
-        mAuthStatusIcon = R.drawable.common_error;    // the most common case in the switch below
+        mAuthStatusIcon = R.drawable.common_error; // the most common case in
+                                                   // the switch below
 
         switch (result.getCode()) {
         case OK_SSL:
@@ -1034,7 +1046,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
         case OK_NO_SSL:
         case OK:
-            if (mHostUrlInput.getText().toString().trim().toLowerCase().startsWith("http://") ) {
+            if (mHostUrlInput.getText().toString().trim().toLowerCase().startsWith("http://")) {
                 mAuthStatusText = R.string.auth_connection_established;
                 mAuthStatusIcon = R.drawable.ic_ok;
             } else {
@@ -1100,31 +1112,32 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     /**
-     * Processes the result of the request for and access token send 
-     * to an OAuth authorization server.
+     * Processes the result of the request for and access token send to an OAuth
+     * authorization server.
      * 
-     * @param operation     Operation performed requesting the access token.
-     * @param result        Result of the operation.
+     * @param operation Operation performed requesting the access token.
+     * @param result Result of the operation.
      */
     private void onGetOAuthAccessTokenFinish(OAuth2GetAccessToken operation, RemoteOperationResult result) {
         try {
             dismissDialog(DIALOG_OAUTH2_LOGIN_PROGRESS);
         } catch (IllegalArgumentException e) {
-            // NOTHING TO DO ; can't find out what situation that leads to the exception in this code, but user logs signal that it happens
+            // NOTHING TO DO ; can't find out what situation that leads to the
+            // exception in this code, but user logs signal that it happens
         }
 
         String webdav_path = AccountUtils.getWebdavPath(mDiscoveredVersion, mAuthTokenType);
         if (result.isSuccess() && webdav_path != null) {
-            /// be gentle with the user
+            // / be gentle with the user
             showDialog(DIALOG_LOGIN_PROGRESS);
 
-            /// time to test the retrieved access token on the ownCloud server
-            mAuthToken = ((OAuth2GetAccessToken)operation).getResultTokenMap().get(OAuth2Constants.KEY_ACCESS_TOKEN);
+            // / time to test the retrieved access token on the ownCloud server
+            mAuthToken = ((OAuth2GetAccessToken) operation).getResultTokenMap().get(OAuth2Constants.KEY_ACCESS_TOKEN);
             Log_OC.d(TAG, "Got ACCESS TOKEN: " + mAuthToken);
             mAuthCheckOperation = new ExistenceCheckOperation("", this, false);
-            WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this, true);
+            WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this,
+                    true);
             client.setBearerCredentials(mAuthToken);
             mAuthCheckOperation.execute(client, this, mHandler);
 
@@ -1135,20 +1148,21 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
     }
 
-
     /**
-     * Processes the result of the access check performed to try the user credentials.
+     * Processes the result of the access check performed to try the user
+     * credentials.
      * 
      * Creates a new account through the AccountManager.
      * 
-     * @param operation     Access check performed.
-     * @param result        Result of the operation.
+     * @param operation Access check performed.
+     * @param result Result of the operation.
      */
     private void onAuthorizationCheckFinish(ExistenceCheckOperation operation, RemoteOperationResult result) {
         try {
             dismissDialog(DIALOG_LOGIN_PROGRESS);
         } catch (IllegalArgumentException e) {
-            // NOTHING TO DO ; can't find out what situation that leads to the exception in this code, but user logs signal that it happens
+            // NOTHING TO DO ; can't find out what situation that leads to the
+            // exception in this code, but user logs signal that it happens
         }
 
         if (result.isSuccess()) {
@@ -1167,7 +1181,8 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             }
 
         } else if (result.isServerFail() || result.isException()) {
-            /// if server fail or exception in authorization, the UI is updated as when a server check failed
+            // / if server fail or exception in authorization, the UI is updated
+            // as when a server check failed
             mServerIsChecked = true;
             mServerIsValid = false;
             mIsSslConn = false;
@@ -1181,18 +1196,20 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             mAuthStatusIcon = 0;
             mAuthStatusText = 0;
             showAuthStatus();
-            
+
             // update input controls state
             showRefreshButton();
             mOkButton.setEnabled(false);
 
-            // very special case (TODO: move to a common place for all the remote operations) (dangerous here?)
+            // very special case (TODO: move to a common place for all the
+            // remote operations) (dangerous here?)
             if (result.getCode() == ResultCode.SSL_RECOVERABLE_PEER_UNVERIFIED) {
                 mLastSslUntrustedServerResult = result;
-                showDialog(DIALOG_SSL_VALIDATOR); 
+                showDialog(DIALOG_SSL_VALIDATOR);
             }
 
-        } else {    // authorization fail due to client side - probably wrong credentials
+        } else { // authorization fail due to client side - probably wrong
+                 // credentials
             updateAuthStatusIconAndText(result);
             showAuthStatus();
             Log_OC.d(TAG, "Access failed: " + result.getLogMessage());
@@ -1200,146 +1217,163 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
     }
 
-
     /**
-     * Sets the proper response to get that the Account Authenticator that started this activity saves 
-     * a new authorization token for mAccount.
+     * Sets the proper response to get that the Account Authenticator that
+     * started this activity saves a new authorization token for mAccount.
      */
     private boolean updateToken() {
         Bundle response = new Bundle();
         response.putString(AccountManager.KEY_ACCOUNT_NAME, mAccount.name);
         response.putString(AccountManager.KEY_ACCOUNT_TYPE, mAccount.type);
-        
-        if (AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType)) { 
+
+        if (AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType)) {
             response.putString(AccountManager.KEY_AUTHTOKEN, mAuthToken);
-            // the next line is necessary; by now, notifications are calling directly to the AuthenticatorActivity to update, without AccountManager intervention
+            // the next line is necessary; by now, notifications are calling
+            // directly to the AuthenticatorActivity to update, without
+            // AccountManager intervention
             mAccountMgr.setAuthToken(mAccount, mAuthTokenType, mAuthToken);
-            
+
         } else if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
             String username = getUserNameForSamlSso();
             if (!mUsernameInput.getText().toString().equals(username)) {
                 // fail - not a new account, but an existing one; disallow
-                RemoteOperationResult result = new RemoteOperationResult(ResultCode.ACCOUNT_NOT_THE_SAME); 
+                RemoteOperationResult result = new RemoteOperationResult(ResultCode.ACCOUNT_NOT_THE_SAME);
                 updateAuthStatusIconAndText(result);
                 showAuthStatus();
                 Log_OC.d(TAG, result.getLogMessage());
-                
+
                 return false;
             }
-            
+
             response.putString(AccountManager.KEY_AUTHTOKEN, mAuthToken);
-            // the next line is necessary; by now, notifications are calling directly to the AuthenticatorActivity to update, without AccountManager intervention
+            // the next line is necessary; by now, notifications are calling
+            // directly to the AuthenticatorActivity to update, without
+            // AccountManager intervention
             mAccountMgr.setAuthToken(mAccount, mAuthTokenType, mAuthToken);
-            
+
         } else {
             response.putString(AccountManager.KEY_AUTHTOKEN, mPasswordInput.getText().toString());
             mAccountMgr.setPassword(mAccount, mPasswordInput.getText().toString());
         }
         setAccountAuthenticatorResult(response);
-        
+
         return true;
     }
 
-
     /**
-     * Creates a new account through the Account Authenticator that started this activity. 
+     * Creates a new account through the Account Authenticator that started this
+     * activity.
      * 
      * This makes the account permanent.
      * 
      * TODO Decide how to name the OAuth accounts
      */
     private boolean createAccount() {
-        /// create and save new ownCloud account
+        // / create and save new ownCloud account
         boolean isOAuth = AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType);
-        boolean isSaml =  AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType);
+        boolean isSaml = AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType);
 
         Uri uri = Uri.parse(mHostBaseUrl);
         String username = mUsernameInput.getText().toString().trim();
-        Log.d("***********************************################## ",username);
+        Log.d("***********************************################## ", username);
         if (isSaml) {
             username = getUserNameForSamlSso();
-            
+
         } else if (isOAuth) {
             username = "OAuth_user" + (new java.util.Random(System.currentTimeMillis())).nextLong();
-        }            
+        }
         username = username + "@" + location;
-        Log.d("***********************************################## ",username);
+        Log.d("***********************************################## ", username);
         String accountName = username + "@" + uri.getHost();
-        //String accountName = username+"@"+location;
+        // String accountName = username+"@"+location;
         if (uri.getPort() >= 0) {
             accountName += ":" + uri.getPort();
         }
-        
-        //String username = (username_text.getText().toString().trim());
-        //String accountName = username + "@" + url.getHost();
-        
+
+        // String username = (username_text.getText().toString().trim());
+        // String accountName = username + "@" + url.getHost();
+
         mAccount = new Account(accountName, AccountAuthenticator.ACCOUNT_TYPE);
         if (AccountUtils.exists(mAccount, getApplicationContext())) {
             // fail - not a new account, but an existing one; disallow
-            RemoteOperationResult result = new RemoteOperationResult(ResultCode.ACCOUNT_NOT_NEW); 
+            RemoteOperationResult result = new RemoteOperationResult(ResultCode.ACCOUNT_NOT_NEW);
             updateAuthStatusIconAndText(result);
             showAuthStatus();
             Log_OC.d(TAG, result.getLogMessage());
             return false;
-            
+
         } else {
-        
+
             if (isOAuth || isSaml) {
-                mAccountMgr.addAccountExplicitly(mAccount, "", null);  // with external authorizations, the password is never input in the app
+                mAccountMgr.addAccountExplicitly(mAccount, "", null); // with
+                                                                      // external
+                                                                      // authorizations,
+                                                                      // the
+                                                                      // password
+                                                                      // is
+                                                                      // never
+                                                                      // input
+                                                                      // in the
+                                                                      // app
             } else {
                 mAccountMgr.addAccountExplicitly(mAccount, mPasswordInput.getText().toString(), null);
             }
-    
-            /// add the new account as default in preferences, if there is none already
+
+            // / add the new account as default in preferences, if there is none
+            // already
             Account defaultAccount = AccountUtils.getCurrentOwnCloudAccount(this);
             if (defaultAccount == null) {
-                SharedPreferences.Editor editor = PreferenceManager
-                        .getDefaultSharedPreferences(this).edit();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
                 editor.putString("select_oc_account", accountName);
                 editor.commit();
             }
-    
-            /// prepare result to return to the Authenticator
-            //  TODO check again what the Authenticator makes with it; probably has the same effect as addAccountExplicitly, but it's not well done
-            final Intent intent = new Intent();       
-            intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE,    AccountAuthenticator.ACCOUNT_TYPE);
-            intent.putExtra(AccountManager.KEY_ACCOUNT_NAME,    mAccount.name);
-            /*if (!isOAuth)
-                intent.putExtra(AccountManager.KEY_AUTHTOKEN,   AccountAuthenticator.ACCOUNT_TYPE); */
-            intent.putExtra(AccountManager.KEY_USERDATA,        username);
+
+            // / prepare result to return to the Authenticator
+            // TODO check again what the Authenticator makes with it; probably
+            // has the same effect as addAccountExplicitly, but it's not well
+            // done
+            final Intent intent = new Intent();
+            intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, AccountAuthenticator.ACCOUNT_TYPE);
+            intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mAccount.name);
+            /*
+             * if (!isOAuth) intent.putExtra(AccountManager.KEY_AUTHTOKEN,
+             * AccountAuthenticator.ACCOUNT_TYPE);
+             */
+            intent.putExtra(AccountManager.KEY_USERDATA, username);
             if (isOAuth || isSaml) {
                 mAccountMgr.setAuthToken(mAccount, mAuthTokenType, mAuthToken);
             }
-            /// add user data to the new account; TODO probably can be done in the last parameter addAccountExplicitly, or in KEY_USERDATA
-            mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_OC_VERSION,    mDiscoveredVersion.toString());
-            mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_OC_BASE_URL,   mHostBaseUrl);
+            // / add user data to the new account; TODO probably can be done in
+            // the last parameter addAccountExplicitly, or in KEY_USERDATA
+            mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_OC_VERSION, mDiscoveredVersion.toString());
+            mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_OC_BASE_URL, mHostBaseUrl);
             if (isSaml) {
-                mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_SUPPORTS_SAML_WEB_SSO, "TRUE"); 
+                mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_SUPPORTS_SAML_WEB_SSO, "TRUE");
             } else if (isOAuth) {
-                mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_SUPPORTS_OAUTH2, "TRUE");  
+                mAccountMgr.setUserData(mAccount, AccountAuthenticator.KEY_SUPPORTS_OAUTH2, "TRUE");
             }
-    
+
             setAccountAuthenticatorResult(intent.getExtras());
             setResult(RESULT_OK, intent);
-    
-            /// immediately request for the synchronization of the new account
+
+            // / immediately request for the synchronization of the new account
             Bundle bundle = new Bundle();
             bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
             ContentResolver.requestSync(mAccount, AccountAuthenticator.AUTHORITY, bundle);
             syncAccount();
-//          Bundle bundle = new Bundle();
-//          bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-//          ContentResolver.requestSync(mAccount, AccountAuthenticator.AUTHORITY, bundle);
+            // Bundle bundle = new Bundle();
+            // bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+            // ContentResolver.requestSync(mAccount,
+            // AccountAuthenticator.AUTHORITY, bundle);
             return true;
         }
     }
 
-    
     private String getUserNameForSamlSso() {
         if (mAuthToken != null) {
-            String [] cookies = mAuthToken.split(";");
-            for (int i=0; i<cookies.length; i++) {
-                if (cookies[i].startsWith(KEY_OC_USERNAME_EQUALS )) {
+            String[] cookies = mAuthToken.split(";");
+            for (int i = 0; i < cookies.length; i++) {
+                if (cookies[i].startsWith(KEY_OC_USERNAME_EQUALS)) {
                     String value = Uri.decode(cookies[i].substring(KEY_OC_USERNAME_EQUALS.length()));
                     return value;
                 }
@@ -1347,7 +1381,6 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
         return "";
     }
-
 
     /**
      * {@inheritDoc}
@@ -1364,14 +1397,13 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         case DIALOG_OAUTH2_LOGIN_PROGRESS:
             break;
         case DIALOG_SSL_VALIDATOR: {
-            ((SslValidatorDialog)dialog).updateResult(mLastSslUntrustedServerResult);
+            ((SslValidatorDialog) dialog).updateResult(mLastSslUntrustedServerResult);
             break;
         }
         default:
             Log_OC.e(TAG, "Incorrect dialog called with id = " + id);
         }
     }
-
 
     /**
      * {@inheritDoc}
@@ -1381,16 +1413,15 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         Dialog dialog = null;
         switch (id) {
         case DIALOG_LOGIN_PROGRESS: {
-            /// simple progress dialog
+            // / simple progress dialog
             ProgressDialog working_dialog = new ProgressDialog(this);
             working_dialog.setMessage(getResources().getString(R.string.auth_trying_to_login));
             working_dialog.setIndeterminate(true);
             working_dialog.setCancelable(true);
-            working_dialog
-            .setOnCancelListener(new DialogInterface.OnCancelListener() {
+            working_dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialog) {
-                    /// TODO study if this is enough
+                    // / TODO study if this is enough
                     Log_OC.i(TAG, "Login canceled");
                     if (mOperationThread != null) {
                         mOperationThread.interrupt();
@@ -1403,11 +1434,10 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         }
         case DIALOG_OAUTH2_LOGIN_PROGRESS: {
             ProgressDialog working_dialog = new ProgressDialog(this);
-            working_dialog.setMessage(String.format("Getting authorization")); 
+            working_dialog.setMessage(String.format("Getting authorization"));
             working_dialog.setIndeterminate(true);
             working_dialog.setCancelable(true);
-            working_dialog
-            .setOnCancelListener(new DialogInterface.OnCancelListener() {
+            working_dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialog) {
                     Log_OC.i(TAG, "Login canceled");
@@ -1418,7 +1448,8 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             break;
         }
         case DIALOG_SSL_VALIDATOR: {
-            /// TODO start to use new dialog interface, at least for this (it is a FragmentDialog already)
+            // / TODO start to use new dialog interface, at least for this (it
+            // is a FragmentDialog already)
             dialog = SslValidatorDialog.newInstance(this, mLastSslUntrustedServerResult, this);
             break;
         }
@@ -1441,11 +1472,11 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         return dialog;
     }
 
-
     /**
-     * Starts and activity to open the 'new account' page in the ownCloud web site
+     * Starts and activity to open the 'new account' page in the ownCloud web
+     * site
      * 
-     * @param view      'Account register' button
+     * @param view 'Account register' button
      */
     public void onRegisterClick(View view) {
         Intent register = new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.url_account_register)));
@@ -1453,109 +1484,117 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         startActivity(register);
     }
 
-/**
- * VillageShare
- */
+    /**
+     * VillageShare
+     */
     public void httpRegstr(View view) {
         mPasswordInput2 = (EditText) findViewById(R.id.account_password2);
         mPasswordInput2.setVisibility(View.VISIBLE);
-       
+
         mPasswordInput.setText("");
         mUsernameInput.setText("");
         mOkButton.setVisibility(View.INVISIBLE);
-        Button mNewUserButton = (Button)findViewById(R.id.account_register);
+        Button mNewUserButton = (Button) findViewById(R.id.account_register);
         mNewUserButton.setVisibility(View.INVISIBLE);
         mRegButton = (Button) findViewById(R.id.buttonReg);
         mRegButton.setVisibility(View.VISIBLE);
-        
-        
+
     }
+
     public void Reguser(View view) {
         String passwordva2 = mPasswordInput2.getText().toString().trim();
         String passwordva1 = mPasswordInput.getText().toString().trim();
         String username = mUsernameInput.getText().toString().trim();
         String loc = locationSpinner.getSelectedItem().toString();
         final String str1 = mHostUrlInput.getText().toString();
-        if(passwordva1.equals("")||passwordva2.equals("")||username.equals("")) {
-            Toast.makeText(getApplicationContext(), "One or more of required fields not entered", Toast.LENGTH_SHORT).show();
-        } else if(!passwordva1.equals(passwordva2)) {
+        if (passwordva1.equals("") || passwordva2.equals("") || username.equals("")) {
+            Toast.makeText(getApplicationContext(), "One or more of required fields not entered", Toast.LENGTH_SHORT)
+                    .show();
+        } else if (!passwordva1.equals(passwordva2)) {
             mPasswordInput.setText("");
             mPasswordInput2.setText("");
-            Toast.makeText(getApplicationContext(), "The two passwords do not match. Please reenter the passwords", Toast.LENGTH_LONG).show();
-            
+            Toast.makeText(getApplicationContext(), "The two passwords do not match. Please reenter the passwords",
+                    Toast.LENGTH_LONG).show();
+
         } else {
             username = username + "@" + loc;
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
             params.add(new BasicNameValuePair("regname", username));
-            params.add(new BasicNameValuePair("regpass1",passwordva1));
-            params.add(new BasicNameValuePair("regpass2",passwordva2));
-            //Log.d("sdn object ",params.toString());
-
+            params.add(new BasicNameValuePair("regpass1", passwordva1));
+            params.add(new BasicNameValuePair("regpass2", passwordva2));
+            // Log.d("sdn object ",params.toString());
+            Log.d("new server ",str1);
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    
-                   HttpPost post = new HttpPost("http://"+str1+"/androiduserreg.php");
-                   
-                   HttpEntity entity;
-                   try {
-                       entity = new UrlEncodedFormEntity(params,"utf-8");
-                       HttpClient client = new DefaultHttpClient();
-                       post.setEntity(entity);
-                       client.getParams().setParameter(CoreProtocolPNames.USER_AGENT,
-                               System.getProperty("http.agent"));
-                       post.setHeader("User-Agent", "Android-ownCloud");
-                       HttpResponse response = client.execute(post);
-                   
-                       if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
-                           HttpEntity entityresponse = response.getEntity();
-                           String jsonentity = EntityUtils.toString(entityresponse);
-                           JSONObject jsonObject = new JSONObject(jsonentity);
-                           JSONObject responseReceived = (JSONObject) jsonObject.get("reply");
-                           
-                           String registerUserReply = responseReceived.getString("reply");
-                            if(registerUserReply.equals(REGISTER_USER_SUCCESS)) {
-                            runOnUiThread(new Runnable() {
-                                public void run() {
-                                    Toast.makeText(getApplicationContext(), "Account created", Toast.LENGTH_SHORT).show();
-                                    
-                                }
-                            }); 
-                            Intent i = getBaseContext().getPackageManager()
-                                    .getLaunchIntentForPackage( getBaseContext().getPackageName() );
-                       i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                       startActivity(i);
-                            } else if(registerUserReply.equals(REGISTER_USER_ALREADY_EXISTS)) {
-                           
+
+                    HttpPost post = new HttpPost("http://" + str1 +"/registeruser.php");//; "/androiduserreg.php");
+
+                    HttpEntity entity;
+                    try {
+                        entity = new UrlEncodedFormEntity(params, "utf-8");
+                        HttpClient client = new DefaultHttpClient();
+                        post.setEntity(entity);
+                        client.getParams()
+                                .setParameter(CoreProtocolPNames.USER_AGENT, System.getProperty("http.agent"));
+                        post.setHeader("User-Agent", "Android-ownCloud");
+                        HttpResponse response = client.execute(post);
+
+                        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                            HttpEntity entityresponse = response.getEntity();
+                            String jsonentity = EntityUtils.toString(entityresponse);
+                            JSONObject jsonObject = new JSONObject(jsonentity);
+                            JSONObject responseReceived = (JSONObject) jsonObject.get("reply");
+
+                            String registerUserReply = responseReceived.getString("reply");
+                            if (registerUserReply.equals(REGISTER_USER_SUCCESS)) {
                                 runOnUiThread(new Runnable() {
                                     public void run() {
-                                        Toast.makeText(getApplicationContext(), "Username already exists on the server, try a different one", Toast.LENGTH_SHORT).show();
-                                        
+                                        Toast.makeText(getApplicationContext(), "Account created", Toast.LENGTH_SHORT)
+                                                .show();
+
                                     }
-                                }); 
+                                });
+                                Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage(
+                                        getBaseContext().getPackageName());
+                                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                startActivity(i);
+                            } else if (registerUserReply.equals(REGISTER_USER_ALREADY_EXISTS)) {
+
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(),
+                                                "Username already exists on the server, try a different one",
+                                                Toast.LENGTH_SHORT).show();
+
+                                    }
+                                });
                             } else {
                                 runOnUiThread(new Runnable() {
                                     public void run() {
-                                        Toast.makeText(getApplicationContext(), "Unable to create account, please try after sometime", Toast.LENGTH_SHORT).show();
-                                        
+                                        Toast.makeText(getApplicationContext(),
+                                                "Unable to create account, please try after sometime",
+                                                Toast.LENGTH_SHORT).show();
+
                                     }
-                                }); 
+                                });
                             }
-                            
+
                         }
-                   } catch (UnsupportedEncodingException e) {
-                       e.printStackTrace();
-                   } catch (IOException e) {
-                       e.printStackTrace();
-                   } catch (JSONException e) {
-                    e.printStackTrace();
-                } 
-                   
-                   }
-                };
-                new Thread(runnable).start();
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            };
+            new Thread(runnable).start();
         }
     }
+
     /**
      * VillageShare
      */
@@ -1577,7 +1616,6 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
 
     }
 
-
     /**
      * Updates the content and visibility state of the icon and text associated
      * to the interactions with the OAuth authorization server.
@@ -1591,8 +1629,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             mAuthStatusLayout.setCompoundDrawablesWithIntrinsicBounds(mAuthStatusIcon, 0, 0, 0);
             mAuthStatusLayout.setVisibility(View.VISIBLE);
         }
-    }     
-
+    }
 
     private void showRefreshButton() {
         mRefreshButton.setVisibility(View.VISIBLE);
@@ -1603,21 +1640,21 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
     }
 
     /**
-     * Called when the refresh button in the input field for ownCloud host is clicked.
+     * Called when the refresh button in the input field for ownCloud host is
+     * clicked.
      * 
      * Performs a new check on the URL in the input field.
      * 
-     * @param view      Refresh 'button'
+     * @param view Refresh 'button'
      */
     public void onRefreshClick(View view) {
         checkOcServer();
     }
-    
-    
+
     /**
      * Called when the eye icon in the password field is clicked.
      * 
-     * Toggles the visibility of the password in the field. 
+     * Toggles the visibility of the password in the field.
      */
     public void onViewPasswordClick() {
         int selectionStart = mPasswordInput.getSelectionStart();
@@ -1628,18 +1665,17 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             showPassword();
         }
         mPasswordInput.setSelection(selectionStart, selectionEnd);
-    }    
-
+    }
 
     /**
      * Called when the checkbox for OAuth authorization is clicked.
      * 
-     * Hides or shows the input fields for user & password. 
+     * Hides or shows the input fields for user & password.
      * 
-     * @param view      'View password' 'button'
+     * @param view 'View password' 'button'
      */
     public void onCheckClick(View view) {
-        CheckBox oAuth2Check = (CheckBox)view;
+        CheckBox oAuth2Check = (CheckBox) view;
         if (oAuth2Check.isChecked()) {
             mAuthTokenType = AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN;
         } else {
@@ -1648,19 +1684,18 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         adaptViewAccordingToAuthenticationMethod();
     }
 
-    
     /**
-     * Changes the visibility of input elements depending on
-     * the current authorization method.
+     * Changes the visibility of input elements depending on the current
+     * authorization method.
      */
-    private void adaptViewAccordingToAuthenticationMethod () {
+    private void adaptViewAccordingToAuthenticationMethod() {
         if (AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN.equals(mAuthTokenType)) {
             // OAuth 2 authorization
             mOAuthAuthEndpointText.setVisibility(View.VISIBLE);
             mOAuthTokenEndpointText.setVisibility(View.VISIBLE);
             mUsernameInput.setVisibility(View.GONE);
             mPasswordInput.setVisibility(View.GONE);
-            
+
         } else if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
             // SAML-based web Single Sign On
             mOAuthAuthEndpointText.setVisibility(View.GONE);
@@ -1675,29 +1710,31 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             mPasswordInput.setVisibility(View.VISIBLE);
         }
     }
-    
+
     /**
-     * Called from SslValidatorDialog when a new server certificate was correctly saved.
+     * Called from SslValidatorDialog when a new server certificate was
+     * correctly saved.
      */
     public void onSavedCertificate() {
         checkOcServer();
     }
 
     /**
-     * Called from SslValidatorDialog when a new server certificate could not be saved 
-     * when the user requested it.
+     * Called from SslValidatorDialog when a new server certificate could not be
+     * saved when the user requested it.
      */
     @Override
     public void onFailedSavingCertificate() {
         showDialog(DIALOG_CERT_NOT_SAVED);
     }
 
-
     /**
-     *  Called when the 'action' button in an IME is pressed ('enter' in software keyboard).
+     * Called when the 'action' button in an IME is pressed ('enter' in software
+     * keyboard).
      * 
-     *  Used to trigger the authentication check when the user presses 'enter' after writing the password, 
-     *  or to throw the server test when the only field on screen is the URL input field.
+     * Used to trigger the authentication check when the user presses 'enter'
+     * after writing the password, or to throw the server test when the only
+     * field on screen is the URL input field.
      */
     @Override
     public boolean onEditorAction(TextView inputField, int actionId, KeyEvent event) {
@@ -1705,20 +1742,20 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             if (mOkButton.isEnabled()) {
                 mOkButton.performClick();
             }
-            
+
         } else if (actionId == EditorInfo.IME_ACTION_NEXT && inputField != null && inputField.equals(mHostUrlInput)) {
             if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
                 checkOcServer();
             }
         }
-        return false;   // always return false to grant that the software keyboard is hidden anyway
+        return false; // always return false to grant that the software keyboard
+                      // is hidden anyway
     }
 
-
-    private abstract static class RightDrawableOnTouchListener implements OnTouchListener  {
+    private abstract static class RightDrawableOnTouchListener implements OnTouchListener {
 
         private int fuzz = 75;
-        
+
         /**
          * {@inheritDoc}
          */
@@ -1726,7 +1763,7 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         public boolean onTouch(View view, MotionEvent event) {
             Drawable rightDrawable = null;
             if (view instanceof TextView) {
-                Drawable[] drawables = ((TextView)view).getCompoundDrawables();
+                Drawable[] drawables = ((TextView) view).getCompoundDrawables();
                 if (drawables.length > 2) {
                     rightDrawable = drawables[2];
                 }
@@ -1735,9 +1772,10 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
                 final int x = (int) event.getX();
                 final int y = (int) event.getY();
                 final Rect bounds = rightDrawable.getBounds();
-                if (x >= (view.getRight() - bounds.width() - fuzz) && x <= (view.getRight() - view.getPaddingRight() + fuzz)
-                    && y >= (view.getPaddingTop() - fuzz) && y <= (view.getHeight() - view.getPaddingBottom()) + fuzz) {
-                    
+                if (x >= (view.getRight() - bounds.width() - fuzz)
+                        && x <= (view.getRight() - view.getPaddingRight() + fuzz) && y >= (view.getPaddingTop() - fuzz)
+                        && y <= (view.getHeight() - view.getPaddingBottom()) + fuzz) {
+
                     return onDrawableTouch(event);
                 }
             }
@@ -1747,16 +1785,15 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
         public abstract boolean onDrawableTouch(final MotionEvent event);
     }
 
-
-    public void onSamlDialogSuccess(String sessionCookie){
+    public void onSamlDialogSuccess(String sessionCookie) {
         mAuthToken = sessionCookie;
-        
+
         if (sessionCookie != null && sessionCookie.length() > 0) {
             mAuthToken = sessionCookie;
             boolean success = false;
             if (mAction == ACTION_CREATE) {
                 success = createAccount();
-        
+
             } else {
                 success = updateToken();
             }
@@ -1765,74 +1802,75 @@ implements  OnRemoteOperationListener, OnSslValidatorListener, OnFocusChangeList
             }
         }
 
-            
     }
-
 
     @Override
     public void onSsoFinished(String sessionCookies) {
-        //Toast.makeText(this, "got cookies: " + sessionCookie, Toast.LENGTH_LONG).show();
+        // Toast.makeText(this, "got cookies: " + sessionCookie,
+        // Toast.LENGTH_LONG).show();
 
         if (sessionCookies != null && sessionCookies.length() > 0) {
             Log_OC.d(TAG, "Successful SSO - time to save the account");
             onSamlDialogSuccess(sessionCookies);
             Fragment fd = getSupportFragmentManager().findFragmentByTag(TAG_SAML_DIALOG);
             if (fd != null && fd instanceof SherlockDialogFragment) {
-                Dialog d = ((SherlockDialogFragment)fd).getDialog();
+                Dialog d = ((SherlockDialogFragment) fd).getDialog();
                 if (d != null && d.isShowing()) {
                     d.dismiss();
                 }
             }
 
-        } else { 
+        } else {
             // TODO - show fail
             Log_OC.d(TAG, "SSO failed");
         }
-    
+
     }
-    
-    /** Show auth_message 
+
+    /**
+     * Show auth_message
      * 
      * @param message
      */
     private void showAuthMessage(String message) {
-       mAuthMessage.setVisibility(View.VISIBLE);
-       mAuthMessage.setText(message);
+        mAuthMessage.setVisibility(View.VISIBLE);
+        mAuthMessage.setText(message);
     }
-    
+
     private void hideAuthMessage() {
         mAuthMessage.setVisibility(View.GONE);
     }
 
-    private void syncAccount(){
-        /// immediately request for the synchronization of the new account
+    private void syncAccount() {
+        // / immediately request for the synchronization of the new account
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         ContentResolver.requestSync(mAccount, AccountAuthenticator.AUTHORITY, bundle);
     }
-    
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType) &&
-                mHostUrlInput.hasFocus() && event.getAction() == MotionEvent.ACTION_DOWN) {
+        if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)
+                && mHostUrlInput.hasFocus() && event.getAction() == MotionEvent.ACTION_DOWN) {
             checkOcServer();
         }
         return super.onTouchEvent(event);
     }
-    
+
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         // TODO Auto-generated method stub
-        
+
         location = parent.getItemAtPosition(position);
-        Log.d("############************ ",location.toString());
-        //Toast.makeText(parent.getContext(), "OnItemSelectedListener : " + parent.getItemAtPosition(position).toString(),Toast.LENGTH_SHORT).show();
-        
+        Log.d("############************ ", location.toString());
+        // Toast.makeText(parent.getContext(), "OnItemSelectedListener : " +
+        // parent.getItemAtPosition(position).toString(),Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
     public void onNothingSelected(AdapterView<?> arg0) {
         // TODO Auto-generated method stub
-        
+
     }
 }
