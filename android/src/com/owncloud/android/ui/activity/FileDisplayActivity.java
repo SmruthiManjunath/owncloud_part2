@@ -706,12 +706,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
         @Override
         protected Integer doInBackground(Void... arg0) {
-            /*try {
-                wait(1000);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }*/
+            
             Log.d("********************************** ","background");
            return 1;
         }
@@ -724,13 +719,10 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-                //Log.d(TAG,getAccount()+" "+uri+" "+currentDir+" ");
                 Intent in = new Intent(getBaseContext(), FileUploader.class);
-                //Intent i = new Intent(currentDir, null, getApplicationContext(), FileUploader.class);
                 in.putExtra(FileUploader.KEY_ACCOUNT, getAccount());
                 in.putExtra(FileUploader.KEY_LOCAL_FILE,path );
                 in.putExtra(FileUploader.KEY_REMOTE_FILE, currentDirectory);
-                //in.putExtra(FileUploader.KEY_MIME_TYPE, "text/plain");
                 in.putExtra(FileUploader.KEY_UPLOAD_TYPE, FileUploader.UPLOAD_SINGLE_FILE);
                 startService(in);
 
@@ -772,21 +764,17 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                     Account account = AccountUtils.getCurrentOwnCloudAccount(getBaseContext());
                     String accountName = account.name;
                     String accountNames[] = accountName.split("@");
-                   
-                    //if (accountNames.length > 2) {
+                    if (accountNames.length > 2) {
                         username = accountNames[0] + "@" + accountNames[1];
                         url = accountNames[2];
-                   // }
-                   // else {
-                   //    throw new NullPointerException("Account name not in correct format");
-                 //   }
+                   }
+                   else {
+                       throw new NullPointerException("Account name not in correct format");
+                   }
                        
-        HttpPost post = new HttpPost("http://" + url + "/owncloud/androidShareeInformation.php");
+        HttpPost post = new HttpPost("http://" + url + "/owncloud/androidSharerInformation.php");
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-        Log.d("ILEListListAdapter ",username);
         
-        //Log.d()
-        Log.d("fileListListAdapter ",username);
 
        
         params.add(new BasicNameValuePair("accountName",username));
@@ -836,7 +824,9 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             if (filesInFolder.get(i).isDirectory()) {
                 if(filesInFolder.get(i).getFileName().equals("Shared"))
                     sharedIndicator = 1;
-                getFilesinFoldersToDownload(filesInFolder.get(i), filesToDownload);
+                else
+                    sharedIndicator = 0;
+                getFilesinFoldersToDownload(filesInFolder.get(i), filesToDownload,sharedIndicator);
                     sharedIndicator = 0;
             } else if (!filesInFolder.get(i).isDown()) {
                 filesToDownload.add(filesInFolder.get(i));
@@ -855,13 +845,17 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         
     }
 
-    private void getFilesinFoldersToDownload(OCFile parentDirectory, List<OCFile> filesToDownload) {
+    private void getFilesinFoldersToDownload(OCFile parentDirectory, List<OCFile> filesToDownload,int sharedIndicator) {
         Vector<OCFile> list = getStorageManager().getDirectoryContent(parentDirectory);
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).isDirectory()) {
-                getFilesinFoldersToDownload(list.get(i), filesToDownload);
+                getFilesinFoldersToDownload(list.get(i), filesToDownload,sharedIndicator);
             } else if (!list.get(i).isDown()) {
                 filesToDownload.add(list.get(i));
+                if(sharedIndicator == 1) {
+                    shareNotifier.setContentText("File "+ list.get(i).getFileName()+" was shared with you");
+                notificationManager.notify(i,shareNotifier.build());
+                }
             }
         }
     }
@@ -1636,43 +1630,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         }
     }
 
-    public void shareHandler(View view1) {
-        /*final Dialog dialog = new Dialog(this);
-        
-        
-        final ArrayAdapter<String> shareWithFriends;
-        dialog.setContentView(R.layout.share_file_with);
-        dialog.setTitle("Share");
-        
-        Account account = AccountUtils.getCurrentOwnCloudAccount(FileDisplayActivity.this);
-        String [] accountNames = account.name.split("@");
-        String accountName = null;
-        if(accountNames.length > 2)
-            accountName = accountNames[0]+"@"+accountNames[1];
-        MultiAutoCompleteTextView textView = (MultiAutoCompleteTextView)dialog.findViewById(R.id.autocompleteshare);
-        
-        textView.setThreshold(2);
-        textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
-        ArrayList<String> friendList = dataSource.getFriendList(accountName);
-        shareWithFriends = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,friendList);
-        Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
-        //textView.set
-        textView.setAdapter(shareWithFriends);
-        textView.setFocusableInTouchMode(true);
-        dialog.show();
-        textView.setOnItemClickListener(new OnItemClickListener() {
-            
-            @Override
-            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                // TODO Auto-generated method stub
-                
-                        //Toast.makeText(FileDisplayActivity.this, "Got cclicked"+ adapter.getItem(position),Toast.LENGTH_SHORT);
-                        Log.d("got clicked",shareWithFriends.getItem(position));
-                        
-                    }
-        });*/
-        
-    }
 
     private void onSynchronizeFileOperationFinish(SynchronizeFileOperation operation, RemoteOperationResult result) {
         dismissDialog(DIALOG_SHORT_WAIT);
@@ -1748,7 +1705,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             Intent i = new Intent(this, FileDownloader.class);
             i.putExtra(FileDownloader.EXTRA_ACCOUNT, account);
             i.putExtra(FileDownloader.EXTRA_FILE, mWaitingToPreview);
-            Log.d("############################ ",mWaitingToPreview.getFileName());
             startService(i);
         }
     }
