@@ -19,6 +19,7 @@ package com.owncloud.android.ui.adapter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import org.apache.http.HttpEntity;
@@ -30,29 +31,30 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.app.Dialog;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout.LayoutParams;
-import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.MultiAutoCompleteTextView;
-import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.owncloud.android.DisplayUtils;
 import com.owncloud.android.R;
@@ -60,11 +62,10 @@ import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
 import com.owncloud.android.db.DbFriends;
+import com.owncloud.android.db.DbShareFile;
 import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
-import com.owncloud.android.ui.activity.FileDisplayActivity;
 import com.owncloud.android.ui.activity.TransferServiceGetter;
-import com.owncloud.android.utils.FileStorageUtils;
 
 
 /**
@@ -90,6 +91,8 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
     private String accountName;
     private String url;
     DbFriends dataSource;
+    DbShareFile dataSourceShareFile;
+    List<String> sharedWith;
     public FileListListAdapter(Context context, TransferServiceGetter transferServiceGetter) {
         mContext = context;
         mAccount = AccountUtils.getCurrentOwnCloudAccount(mContext);
@@ -144,6 +147,20 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
             OCFile file = mFiles.get(position);
             TextView fileName = (TextView) view.findViewById(R.id.Filename);
             String name = file.getFileName();
+            if(dataSourceShareFile == null)
+                dataSourceShareFile = new DbShareFile(mContext);
+            
+            
+            Account account = AccountUtils.getCurrentOwnCloudAccount(mContext);
+            String [] accountNames = account.name.split("@");
+            
+            if(accountNames.length > 2)
+            {
+                accountName = accountNames[0]+"@"+accountNames[1];
+                url = accountNames[2];
+            }
+            Map<String,String> fileSharers = dataSourceShareFile.getUsersWhoSharedFilesWithMe(accountName);
+            TextView sharer = (TextView)view.findViewById(R.id.sharer);
             ImageView shareButton = (ImageView) view.findViewById(R.id.shareItem);
             fileName.setText(name);
             ImageView fileIcon = (ImageView) view.findViewById(R.id.imageView1);
@@ -151,6 +168,18 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
             ImageView localStateView = (ImageView) view.findViewById(R.id.imageView2);
             FileDownloaderBinder downloaderBinder = mTransferServiceGetter.getFileDownloaderBinder();
             FileUploaderBinder uploaderBinder = mTransferServiceGetter.getFileUploaderBinder();
+            if(fileSharers.size()!=0 && (!file.equals("Shared") && file.getRemotePath().contains("Shared"))) {
+                Log.d("fileListLIstada ",fileSharers.entrySet()+" "+file.getRemotePath());
+               if(fileSharers.containsKey(name)){
+                        sharer.setText(fileSharers.get(name));
+                        fileSharers.remove(name);
+                    } else {
+                        sharer.setText(" ");
+                    }
+            }else {
+                        sharer.setText(" ");
+                    }
+        
             if (downloaderBinder != null && downloaderBinder.isDownloading(mAccount, file)) {
                 localStateView.setImageResource(R.drawable.downloading_file_indicator);
                 localStateView.setVisibility(View.VISIBLE);
@@ -163,12 +192,13 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
             } else {
                 localStateView.setVisibility(View.INVISIBLE);
             }
-            dataSource = new DbFriends(mContext);
+            
             TextView fileSizeV = (TextView) view.findViewById(R.id.file_size);
             TextView lastModV = (TextView) view.findViewById(R.id.last_mod);
             ImageView checkBoxV = (ImageView) view.findViewById(R.id.custom_checkbox);
             shareButton.setOnClickListener(new OnClickListener() {
-                
+                String shareStatusDisplay;
+                int flagShare = 0;
                 @Override
                 public void onClick(View v) {
                     // TODO Auto-generated method stub
@@ -178,6 +208,12 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                    // int position = arg0;
                     final OCFile fileToBeShared = (OCFile) getItem(position);
                     final ArrayAdapter<String> shareWithFriends;
+                    final ArrayAdapter<String> shareAdapter;
+                    final Long fileId = fileToBeShared.getFileId();
+                    final String filePath;
+                    sharedWith = new ArrayList<String>();
+                    dataSource = new DbFriends(mContext);
+                    dataSourceShareFile = new DbShareFile(mContext);
                     dialog.setContentView(R.layout.share_file_with);
                     dialog.setTitle("Share");
                     Log.d("ewhqo oieqjoqejruihoh uh =u h ",fileToBeShared.getFileName()+" "+fileToBeShared.getFileId()+" "+fileToBeShared.getParentId());
@@ -192,17 +228,35 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                         
                     final AutoCompleteTextView textView = (AutoCompleteTextView)dialog.findViewById(R.id.autocompleteshare);
                     Button shareBtn = (Button)dialog.findViewById(R.id.ShareBtn);
+                    Button doneBtn = (Button)dialog.findViewById(R.id.ShareDoneBtn);
+                    final ListView listview = (ListView)dialog.findViewById(R.id.alreadySharedWithList);
+
                     textView.setThreshold(2);
                     //textView.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
                     final String itemType;
-                    if(fileToBeShared.isDirectory())
-                        itemType = "folder";
-                    else
-                        itemType="file";
-                    //fileToBeShared.
-                    final String itemSource = "files"+String.valueOf(fileToBeShared.getRemotePath());
+                    
+                    filePath = "files"+String.valueOf(fileToBeShared.getRemotePath());
                     //Now it is only members, then will change it to groups
-                   
+                    final String fileName = fileToBeShared.getFileName();
+                    final String fileRemotePath = fileToBeShared.getRemotePath();
+                    if(dataSourceShareFile == null)
+                        dataSourceShareFile = new DbShareFile(mContext);
+                    sharedWith = dataSourceShareFile.getUsersWithWhomIhaveSharedFile(fileName,fileRemotePath,accountName,String.valueOf(1));
+                    shareAdapter =  new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,sharedWith);
+                    listview.setAdapter(shareAdapter);
+                   final String itemSource;
+                    if(fileToBeShared.isDirectory()) {
+                        itemType = "folder";
+                        int lastSlashInFolderPath = filePath.lastIndexOf('/');
+                        itemSource =  filePath.substring(0, lastSlashInFolderPath);
+                        //itemSource = filePath;
+                    }
+                    else {
+                        itemType="file";
+                        itemSource = filePath;
+                    }
+                    //fileToBeShared.
+                    
                     //Permissions disabled with friends app
                     ArrayList<String> friendList = dataSource.getFriendList(accountName);
                     dataSource.close();
@@ -219,16 +273,29 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                                 
                                 }
                     });
-                    
+                    final Handler finishedHandler = new Handler() {
+                        @Override public void handleMessage(Message msg) {
+                            shareAdapter.notifyDataSetChanged();
+                            Toast.makeText(mContext, shareStatusDisplay, Toast.LENGTH_SHORT).show();
+
+                        }
+                     };
                     shareBtn.setOnClickListener(new OnClickListener() {
                         
                         @Override
                         public void onClick(View v) {
                             // TODO Auto-generated method stub
                             final String shareWith = textView.getText().toString();
-                            if(shareWith == null) {
+                            
+                            if(shareWith.equals("")) {
                                 textView.setHint("Share With");
-                            } else {
+                                Toast.makeText(mContext, "Please enter the friends name with whom you want to share", Toast.LENGTH_SHORT).show();
+                            } else if(sharedWith.contains(shareWith)) {
+                                textView.setHint("Share With");
+                                Toast.makeText(mContext, "You have shared the file with that person", Toast.LENGTH_SHORT).show();
+                            }
+                                else {
+                            
                             textView.setText("");
                             Runnable runnable = new Runnable() {
                                 @Override
@@ -247,6 +314,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                             params.add(new BasicNameValuePair("permission",permissions));
                             params.add(new BasicNameValuePair("uidOwner",accountName));
                             HttpEntity entity;
+                            String shareSuccess = "false";
                             try {
                                 entity = new UrlEncodedFormEntity(params, "utf-8");
                                 HttpClient client = new DefaultHttpClient();
@@ -255,19 +323,63 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                                 
                                 if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                                     HttpEntity entityresponse = response.getEntity();
-                                    Log.d("hiho ohohoh jgh gho ",entityresponse.toString());
+                                    String jsonentity = EntityUtils.toString(entityresponse);
+                                    JSONObject obj = new JSONObject(jsonentity);
+                                    shareSuccess = obj.getString("SHARE_STATUS");
+                                    Log.d("FileListListAdapter ",shareSuccess);
+                                    flagShare = 1;
+                                    if(shareSuccess.equals("true")) {
+                                        dataSourceShareFile.putNewShares(fileId, fileName, fileRemotePath, accountName, shareWith);
+                                        sharedWith.add(shareWith);
+                                        //shareAdapter.add(shareWith);
+                                        shareStatusDisplay = "File share succeeded";
+                                    } else if(shareSuccess.equals("INVALID_FILE")) {
+                                        shareStatusDisplay = "File you are trying to share does not exist";
+                                        //Toast.makeText(mContext, "File you are trying to share does not exist", Toast.LENGTH_SHORT).show();
+                                    } else if(shareSuccess.equals("INVALID_SHARETYPE")) {
+                                        shareStatusDisplay = "File Share type is invalid";
+                                        //Toast.makeText(mContext, "File Share type is invalid", Toast.LENGTH_SHORT).show();
+                                    }else {
+                                        shareStatusDisplay = "Share did not succeed. Please check your internet connection";
+                                        //Toast.makeText(mContext, "Share did not succeed. Please check your internet connection", Toast.LENGTH_SHORT).show();
+                                    }
+                                   
+                                    finishedHandler.sendEmptyMessage(flagShare);
+                                       
+
                                 } }catch(Exception e) {
                                     e.printStackTrace();
                                 }
+                            
                                 }
                                 };
                                 new Thread(runnable).start();
+                                
+                                
+                                
+
                             }
+                            
+                            
+                            if(flagShare == 1) {
+                            }
+                            
+                        }
+                        
+                    });
+                    doneBtn.setOnClickListener(new OnClickListener() {
+                        
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                            dataSourceShareFile.close();
                         }
                     });
-                    
                 }
+                    
+                
             });
+           //dataSourceShareFile.close();
             if (!file.isDirectory()) {
                 fileSizeV.setVisibility(View.VISIBLE);
                 fileSizeV.setText(DisplayUtils.bytesToHumanReadable(file.getFileLength()));

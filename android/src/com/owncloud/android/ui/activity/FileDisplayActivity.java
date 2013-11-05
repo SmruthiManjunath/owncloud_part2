@@ -33,6 +33,9 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.app.AlertDialog;
@@ -92,6 +95,7 @@ import com.owncloud.android.datamodel.DataStorageManager;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
 import com.owncloud.android.db.DbFriends;
+import com.owncloud.android.db.DbShareFile;
 import com.owncloud.android.files.services.FileDownloader;
 import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileObserverService;
@@ -179,6 +183,8 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
     List<String> todisplay;
     private String url;
     DbFriends dataSource;
+    DbShareFile dataSourceShareFile;
+    //String username;
     private NotificationCompat.Builder shareNotifier;
     NotificationManager notificationManager;
     
@@ -193,7 +199,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         Intent intent = new Intent(this,InitialPageActivity.class);
         startActivity(intent);
         mHandler = new Handler();
-
+        
         /// bindings to transference services
         mUploadConnection = new ListServiceConnection(); 
         mDownloadConnection = new ListServiceConnection();
@@ -221,6 +227,8 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 String message = intent.getStringExtra("message");
                 Log.d("receiver", "Got message: " + message);
                 instantDownloadFile();
+                //make the http request and update the ui to include the sharer information
+                
                 //unregisterReceiver(instantdownloadreceiver);
             }
         };
@@ -609,19 +617,22 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             break;
         }
         case R.id.action_share_file:{
-            Log.d(TAG,"here");
+            /*Log.d(TAG,"here");
+            final String username = null;
+
+           
+                Account account = AccountUtils.getCurrentOwnCloudAccount(this);
+                String accountName = account.name;
+                String accountNames[] = accountName.split("@");
+                if (accountNames.length > 2) {
+                    username = accountNames[0] + "@" + accountNames[1];
+                    url = accountNames[2];
+                }
+                else {
+                    throw new NullPointerException("Account name not in correct format");
+                }
+                
             
-            Account account = AccountUtils.getCurrentOwnCloudAccount(this);
-            String accountName = account.name;
-            final String username;
-            String accountNames[] = accountName.split("@");
-            if (accountNames.length > 2) {
-                username = accountNames[0] + "@" + accountNames[1];
-                url = accountNames[2];
-            }
-            else {
-                throw new NullPointerException("Account name not in correct format");
-            }
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -649,7 +660,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 }
                 }
                 };
-                new Thread(runnable).start();
+                new Thread(runnable).start();*/
         }break;
         case R.id.action_group: {
             Intent groupIntent = new Intent(this,GroupActivity.class);
@@ -746,9 +757,71 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 getAccount(),
                 AccountAuthenticator.AUTHORITY, bundle);
         
-        
+        shareDetailsSync();
     }
 
+    public void shareDetailsSync() {
+        
+        Runnable runnable = new Runnable() {
+            
+            
+            @Override
+            public void run() {
+                
+                final String username;// = null;
+                    Account account = AccountUtils.getCurrentOwnCloudAccount(getBaseContext());
+                    String accountName = account.name;
+                    String accountNames[] = accountName.split("@");
+                   
+                    //if (accountNames.length > 2) {
+                        username = accountNames[0] + "@" + accountNames[1];
+                        url = accountNames[2];
+                   // }
+                   // else {
+                   //    throw new NullPointerException("Account name not in correct format");
+                 //   }
+                       
+        HttpPost post = new HttpPost("http://" + url + "/owncloud/androidShareeInformation.php");
+        final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        Log.d("ILEListListAdapter ",username);
+        
+        //Log.d()
+        Log.d("fileListListAdapter ",username);
+
+       
+        params.add(new BasicNameValuePair("accountName",username));
+        HttpEntity entity;
+        JSONArray sharerList;
+        List<String> sharedFileList;
+        try {
+            entity = new UrlEncodedFormEntity(params, "utf-8");
+            HttpClient client = new DefaultHttpClient();
+            post.setEntity(entity);
+            HttpResponse response = client.execute(post);
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                HttpEntity entityresponse = response.getEntity();
+                String jsonentity = EntityUtils.toString(entityresponse);
+                JSONObject obj = new JSONObject(jsonentity);
+                sharerList = obj.getJSONArray("SHARER_LIST");
+                sharedFileList = new ArrayList<String>();
+                for(int i = 0;i<sharerList.length();i++) {
+                    Log.d("FilelIstlist",sharerList.getString(i));
+                    sharedFileList.add(sharerList.getString(i));
+                }
+                  dataSourceShareFile = new DbShareFile(getBaseContext());
+                  dataSourceShareFile.putNewShareList(sharedFileList, username);
+                  dataSourceShareFile.close();
+            }} catch(Exception e) {
+                e.printStackTrace();
+            }
+        
+            }
+            };
+            new Thread(runnable).start();
+            
+    }
+    
+    
     public void instantDownloadFile() {
         startSynchronization();
         //
