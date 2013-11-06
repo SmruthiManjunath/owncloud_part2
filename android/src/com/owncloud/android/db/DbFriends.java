@@ -28,8 +28,8 @@ public class DbFriends {
 
     private final String TABLE_YOUR_FRIENDS = "your_friends";
     private final String TABLE_ACCEPT_FRIENDS = "received_requests";
-    String[] accept_friends_cloumns = {"_ID","friendrequestfrom","account"};
-    String[] your_friends_cloumns = {"_ID","friend","account"};
+    String[] accept_friends_cloumns = {"_ID","friendrequestfrom"};
+    String[] your_friends_cloumns = {"_ID","friend"};
     public DbFriends(Context context) {
         mHelper = new OpenerHelper(context);
         mDB = mHelper.getWritableDatabase();
@@ -50,7 +50,7 @@ public class DbFriends {
 
     public List<String> updateFriendRequestStatus(ArrayList<String> friendRequests,String account) {
         ContentValues cv = new ContentValues();
-        Cursor cursor = mDB.query(TABLE_ACCEPT_FRIENDS, accept_friends_cloumns,null,null,null,null,null);
+        Cursor cursor = mDB.query(TABLE_ACCEPT_FRIENDS, accept_friends_cloumns,"account=?",new String[]{account},null,null,null);
         cursor.moveToFirst();
         Set<String> presentInDatabase = new HashSet<String>();
         List<String> sendNotificationList = new ArrayList<String>();
@@ -84,7 +84,7 @@ public class DbFriends {
     }
 
     public ArrayList<String> getFriendList(String account) {
-        Cursor cursor = mDB.query(TABLE_YOUR_FRIENDS, your_friends_cloumns,null,null,null,null,null);
+        Cursor cursor = mDB.query(TABLE_YOUR_FRIENDS, your_friends_cloumns,"account=?",new String[]{account},null,null,null);
         cursor.moveToFirst();
         ArrayList<String> sendFriendList = new ArrayList<String>();
         while (!cursor.isAfterLast()) {

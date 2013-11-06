@@ -197,10 +197,12 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
         super.onCreate(savedInstanceState); // this calls onAccountChanged()
                                             // when ownCloud Account is valid
         // requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        if(AccountUtils.getCurrentOwnCloudAccount(getBaseContext())!= null) {
         Intent intent = new Intent(this, InitialPageActivity.class);
         startActivity(intent);
+        }
         mHandler = new Handler();
-
+        
         // / bindings to transference services
         mUploadConnection = new ListServiceConnection();
         mDownloadConnection = new ListServiceConnection();

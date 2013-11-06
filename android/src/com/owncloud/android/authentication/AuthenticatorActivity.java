@@ -1506,6 +1506,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         String passwordva1 = mPasswordInput.getText().toString().trim();
         String username = mUsernameInput.getText().toString().trim();
         String loc = locationSpinner.getSelectedItem().toString();
+        locationSpinner.setOnItemSelectedListener(this);
+
         final String str1 = mHostUrlInput.getText().toString();
         if (passwordva1.equals("") || passwordva2.equals("") || username.equals("")) {
             Toast.makeText(getApplicationContext(), "One or more of required fields not entered", Toast.LENGTH_SHORT)
@@ -1528,7 +1530,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                 @Override
                 public void run() {
 
-                    HttpPost post = new HttpPost("http://" + str1 +"/registeruser.php");//; "/androiduserreg.php");
+                    HttpPost post = new HttpPost("http://" + str1 +"/androiduserreg.php");
 
                     HttpEntity entity;
                     try {
@@ -1544,9 +1546,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                             HttpEntity entityresponse = response.getEntity();
                             String jsonentity = EntityUtils.toString(entityresponse);
                             JSONObject jsonObject = new JSONObject(jsonentity);
-                            JSONObject responseReceived = (JSONObject) jsonObject.get("reply");
+                            //JSONObject responseReceived = (JSONOjsonObject.get("reply");
 
-                            String registerUserReply = responseReceived.getString("reply");
+                            String registerUserReply = jsonObject.getString("reply");
+                            
+                            
                             if (registerUserReply.equals(REGISTER_USER_SUCCESS)) {
                                 runOnUiThread(new Runnable() {
                                     public void run() {
