@@ -49,7 +49,11 @@ import com.owncloud.android.authentication.AccountAuthenticator;
 import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.db.DbFriends;
 import com.owncloud.android.utils.OwnCloudVersion;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class AcceptFriendRequestsActivity extends Activity {
 
     String accountname;

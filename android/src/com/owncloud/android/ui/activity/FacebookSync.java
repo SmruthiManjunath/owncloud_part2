@@ -54,7 +54,11 @@ import com.owncloud.android.authentication.AccountAuthenticator;
 import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.utils.OwnCloudVersion;
 
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class FacebookSync extends Activity implements OnClickListener,DialogInterface.OnClickListener{
 
     String APP_ID;

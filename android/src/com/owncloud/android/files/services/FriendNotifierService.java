@@ -1,3 +1,6 @@
+/**
+ * VillageShare project
+ */
 package com.owncloud.android.files.services;
 
 import java.util.ArrayList;
@@ -28,7 +31,11 @@ import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.db.DbFriends;
 import com.owncloud.android.ui.activity.AcceptFriendRequestsActivity;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class FriendNotifierService extends IntentService {
     public FriendNotifierService() {
         super("FriendNotifierService");

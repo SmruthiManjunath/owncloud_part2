@@ -1,4 +1,4 @@
-/**
+/*
  * Village Share
  */
 package com.owncloud.android.ui.activity;

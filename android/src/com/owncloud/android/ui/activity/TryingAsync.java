@@ -1,3 +1,4 @@
+
 package com.owncloud.android.ui.activity;
 
 import java.io.IOException;
@@ -42,7 +43,6 @@ public class TryingAsync extends AsyncTask<String, Integer , ArrayList<String>> 
         String url = urls[1];
         String username = urls[0];
         ArrayList<String> sharefriendList = new ArrayList<String>();
-        Log.d(" Seriously :(",url+" "+username);
         HttpPost post = new HttpPost("http://"+url+"/owncloud/index.php/apps/friends/friendlist");
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("CURRENTUSER", username));

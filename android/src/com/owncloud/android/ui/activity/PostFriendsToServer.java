@@ -1,3 +1,6 @@
+/*
+ * VillageShare project
+ */
 package com.owncloud.android.ui.activity;
 
 import java.io.IOException;
@@ -20,7 +23,11 @@ import org.json.JSONObject;
 
 import android.os.AsyncTask;
 import android.util.Log;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class PostFriendsToServer extends AsyncTask<Long, Integer, JSONArray>{
 
     private static final int TIMEOUT_MILLISEC = 10;

@@ -1,3 +1,6 @@
+/*
+ * VillageShare Project
+ */
 package com.owncloud.android.ui.activity;
 
 import java.util.Calendar;
@@ -20,7 +23,11 @@ import com.owncloud.android.R;
 import com.owncloud.android.files.services.FriendListNotifierService;
 import com.owncloud.android.files.services.FriendNotifierService;
 import com.owncloud.android.files.services.instantDownloadSharedFilesService;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class InitialPageActivity extends Activity {
     String TAG = InitialPageActivity.class.getName();
     Toast toast;

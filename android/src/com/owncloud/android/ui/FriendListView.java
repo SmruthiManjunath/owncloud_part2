@@ -1,3 +1,6 @@
+/*
+ * VillageShare project
+ */
 package com.owncloud.android.ui;
 
 import java.util.List;
@@ -14,7 +17,11 @@ import android.widget.TextView;
 
 import com.facebook.model.OpenGraphAction;
 import com.owncloud.android.R;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public abstract class FriendListView {
     private String text1;
     private String text2;

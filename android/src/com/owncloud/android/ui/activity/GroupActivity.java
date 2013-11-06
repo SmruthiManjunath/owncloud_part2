@@ -1,3 +1,6 @@
+/*
+ * VillageShare project
+ */
 package com.owncloud.android.ui.activity;
 
 import java.io.IOException;
@@ -41,7 +44,11 @@ import android.widget.Toast;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountAuthenticator;
 import com.owncloud.android.authentication.AccountUtils;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class GroupActivity extends Activity implements OnClickListener{
 
     EditText groupName;

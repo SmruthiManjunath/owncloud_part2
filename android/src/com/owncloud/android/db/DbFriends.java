@@ -1,3 +1,6 @@
+/**
+ * VillageShare Project
+ */
 package com.owncloud.android.db;
 
 import java.util.ArrayList;
@@ -13,6 +16,10 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.owncloud.android.Log_OC;
 
+/**
+ * @author Smruthi Manjunath
+ *
+ */
 public class DbFriends {
     private SQLiteDatabase mDB;
     private OpenerHelper mHelper;

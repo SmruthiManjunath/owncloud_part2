@@ -1,3 +1,6 @@
+/**
+ * VillageShare Project
+ */
 package com.owncloud.android.files.services;
 
 import android.app.IntentService;
@@ -7,7 +10,11 @@ import android.util.Log;
 import com.owncloud.android.authentication.AccountUtils;
 
 import com.owncloud.android.operations.RemoteOperationResult;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class instantDownloadSharedFilesService extends IntentService {
 
     public static String TAG = "instantDownloadSharedFilesService";
@@ -23,9 +30,7 @@ public class instantDownloadSharedFilesService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Intent instantDownloadIntent = new Intent(NOTIFICATION);
         instantDownloadIntent.putExtra("message", "data");
-        Log.d(TAG,"message"+"*************** ");
         if(AccountUtils.getCurrentOwnCloudAccount(getApplicationContext()) != null) {
-            Log.d(TAG," ************************* "+AccountUtils.getCurrentOwnCloudAccount(getApplicationContext()).name);
             sendBroadcast(instantDownloadIntent);
         }
     }

@@ -1,4 +1,5 @@
 /**
+ * VillageShare project
  * 
  */
 package com.owncloud.android.db;
@@ -19,7 +20,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.owncloud.android.Log_OC;
 
 /**
- * @author smruthi
+ * @author Smruthi Manjunath
  *
  */
 public class DbShareFile {
@@ -42,11 +43,10 @@ public class DbShareFile {
         mDB.close();
     }
 
-    public boolean putNewShares(Long fileId, String fileName,String fileRemotePath,String ownerAccountId, String shareWithAccountId) {
+    public boolean putNewShares(String fileName,String fileRemotePath,String ownerAccountId, String shareWithAccountId) {
         ContentValues cv = new ContentValues();
         cv.put("ownerId", ownerAccountId );
         cv.put("sharedWith", shareWithAccountId);
-        cv.put("fileId", fileId);
         cv.put("fileName", fileName);
         cv.put("fileRemotePath", fileRemotePath);
         long result = mDB.insert(TABLE_YOUR_SHARES, null, cv);

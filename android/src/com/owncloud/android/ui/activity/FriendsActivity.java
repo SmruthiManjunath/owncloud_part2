@@ -15,7 +15,11 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 
 import com.owncloud.android.R;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class FriendsActivity extends Activity implements OnClickListener{
     
     @Override

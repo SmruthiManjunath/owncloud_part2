@@ -204,7 +204,6 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                     final OCFile fileToBeShared = (OCFile) getItem(position);
                     final ArrayAdapter<String> shareWithFriends;
                     final ArrayAdapter<String> shareAdapter;
-                    final Long fileId = fileToBeShared.getFileId();
                     final String filePath;
                     sharedWith = new ArrayList<String>();
                     dataSource = new DbFriends(mContext);
@@ -251,7 +250,6 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                     ArrayList<String> friendList = dataSource.getFriendList(accountName);
                     dataSource.close();
                     shareWithFriends = new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,friendList);
-                    Log.d("filelistlistadapter",friendList.size()+" "+friendList.get(0));
                     textView.setAdapter(shareWithFriends);
                     textView.setFocusableInTouchMode(true);
                     dialog.show();
@@ -313,7 +311,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                                     shareSuccess = obj.getString("SHARE_STATUS");
                                     flagShare = 1;
                                     if(shareSuccess.equals("true")) {
-                                        dataSourceShareFile.putNewShares(fileId, fileName, fileRemotePath, accountName, shareWith);
+                                        dataSourceShareFile.putNewShares(fileName, fileRemotePath, accountName, shareWith);
                                         sharedWith.add(shareWith);
                                         shareStatusDisplay = "File share succeeded";
                                     } else if(shareSuccess.equals("INVALID_FILE")) {
@@ -352,7 +350,7 @@ public class FileListListAdapter extends BaseAdapter implements ListAdapter, OnC
                         @Override
                         public void onClick(View v) {
                             dialog.dismiss();
-                            dataSourceShareFile.close();
+                            //dataSourceShareFile.close();
                         }
                     });
                 }

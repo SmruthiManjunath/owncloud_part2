@@ -238,7 +238,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         mAccount = null;
         mHostBaseUrl = "";
         location = locationSpinner.getSelectedItem();
-        // locationSpinner.setOnItemSelectedListener(this);
+        locationSpinner.setOnItemSelectedListener(this);
         boolean refreshButtonEnabled = false;
 
         // URL input configuration applied

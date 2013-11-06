@@ -15,7 +15,11 @@ import android.widget.TabHost;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.owncloud.android.R;
-
+/**
+ * 
+ * @author Smruthi Manjunath
+ *
+ */
 public class TabLayoutActivity extends TabActivity {
 
     TabHost mTabHost;
