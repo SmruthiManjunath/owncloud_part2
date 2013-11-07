@@ -104,7 +104,7 @@ public class DisplayFilesOfflineActivity extends Activity {
             } else {
                 String[] file = ((String) arg0.getItemAtPosition(arg2)).split("\\.");
                 String Extension = file[file.length - 1];
-
+               
                 int start = owncloudDirectory.getPath().indexOf("ownCloud");
                 String Path = "file:///sdcard/" + owncloudDirectory.getPath().substring(start) + "/" + fileName;
                 Log.d(TAG, Path);

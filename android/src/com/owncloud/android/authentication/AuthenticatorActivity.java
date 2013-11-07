@@ -1504,7 +1504,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     public void Reguser(View view) {
         String passwordva2 = mPasswordInput2.getText().toString().trim();
         String passwordva1 = mPasswordInput.getText().toString().trim();
-        String username = mUsernameInput.getText().toString().trim();
+        final String username = mUsernameInput.getText().toString().trim();
         String loc = locationSpinner.getSelectedItem().toString();
         locationSpinner.setOnItemSelectedListener(this);
 
@@ -1519,7 +1519,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                     Toast.LENGTH_LONG).show();
 
         } else {
-            username = username + "@" + loc;
+            //username = username + "@" + loc;
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
             params.add(new BasicNameValuePair("regname", username));
             params.add(new BasicNameValuePair("regpass1", passwordva1));
@@ -1545,17 +1545,21 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                             HttpEntity entityresponse = response.getEntity();
                             String jsonentity = EntityUtils.toString(entityresponse);
-                            JSONObject jsonObject = new JSONObject(jsonentity);
+                            final JSONObject jsonObject = new JSONObject(jsonentity);
                             //JSONObject responseReceived = (JSONOjsonObject.get("reply");
 
                             String registerUserReply = jsonObject.getString("reply");
                             
                             
                             if (registerUserReply.equals(REGISTER_USER_SUCCESS)) {
+                                final String location_returned = jsonObject.getString("location");
                                 runOnUiThread(new Runnable() {
                                     public void run() {
-                                        Toast.makeText(getApplicationContext(), "Account created", Toast.LENGTH_SHORT)
+                                        if(!location_returned.equals(location)) {
+                                            Log.d("location returned ",location_returned);
+                                        Toast.makeText(getApplicationContext(), "Account created and your login id is"+location_returned, Toast.LENGTH_LONG)
                                                 .show();
+                                        }
 
                                     }
                                 });
