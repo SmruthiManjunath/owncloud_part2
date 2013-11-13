@@ -7,17 +7,16 @@
  <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        
-        android:id = "@+id/yourgrouptxt"/>
+        android:id = "@+id/yourmembertxt"/>
 
    
     <ImageView
-        android:id="@+id/deletegroupbtn1"
+        android:id="@+id/deletememberbtn1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:src="@drawable/ic_delete"
-        android:onClick="onDeleteClick"
+        android:onClick="onDeleteMember"
         android:clickable="true"
         />
 

@@ -88,9 +88,10 @@ public class WebdavClient extends HttpClient {
         List<String> authPrefs = new ArrayList<String>(1);
         authPrefs.add(AuthPolicy.BASIC);
         getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY, authPrefs);        
-        
         getParams().setAuthenticationPreemptive(true);
         mCredentials = new UsernamePasswordCredentials(username, password);
+        Log_OC.d("in set BasicCredentials ",username+" "+password);
+
         getState().setCredentials(AuthScope.ANY, mCredentials);
         mSsoSessionCookie = null;
         mAuthTokenType = AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD;
@@ -115,6 +116,8 @@ public class WebdavClient extends HttpClient {
      */
     public boolean existsFile(String path) throws IOException, HttpException {
         HeadMethod head = new HeadMethod(mUri.toString() + WebdavUtils.encodePath(path));
+        //Log.d("IN WebdavClient ",path);
+        Log_OC.d("In Webdav CLiint ",path);
         try {
             int status = executeMethod(head);
             Log_OC.d(TAG, "HEAD to " + path + " finished with HTTP status " + status + ((status != HttpStatus.SC_OK)?"(FAIL)":""));

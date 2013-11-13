@@ -26,6 +26,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -33,9 +34,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -53,6 +56,7 @@ public class GroupActivity extends Activity implements OnClickListener{
 
     EditText groupName;
     Button CreateGroup;
+    ImageView DeleteGroup;
     String accountname;
     TextView groupNameText;
     TextView tv;
@@ -85,6 +89,22 @@ public class GroupActivity extends Activity implements OnClickListener{
         groupNames = new ArrayList<String>();
         adapter = new GroupArrayAdapter(this, R.layout.group_editdelete, groupNames);
         groupListView.setAdapter(adapter);
+        
+        groupListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1, int position, long id) {
+                final String groupName = groupListView.getItemAtPosition(position).toString();
+               Intent  intent = new Intent(GroupActivity.this,ListAllUsersInGroup.class);
+                intent.putExtra("groupName", groupName);
+                startActivity(intent);
+                //Log.d("GroupActivity ","in onclick ");
+            }
+            
+        });
+        
+        
+        
         AccountManager am = AccountManager.get(this);
         Account account = AccountUtils.getCurrentOwnCloudAccount(this);
         String[] url1 = (am.getUserData(account, AccountAuthenticator.KEY_OC_BASE_URL)).split("/");
@@ -98,7 +118,7 @@ public class GroupActivity extends Activity implements OnClickListener{
         }
 
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new BasicNameValuePair("operations",groupOperation.GET_USERS_GROUP.getGroupOperation()));
+        params.add(new BasicNameValuePair("operation",groupOperation.GET_USERS_GROUP.getGroupOperation()));
         params.add(new BasicNameValuePair("GID"," "));
         params.add(new BasicNameValuePair("UID", username));
         Runnable runnable = new Runnable() {
@@ -117,9 +137,9 @@ public class GroupActivity extends Activity implements OnClickListener{
                         HttpEntity entityresponse = response.getEntity();
                         String jsonentity = EntityUtils.toString(entityresponse);
                         JSONObject obj = new JSONObject(jsonentity);
-                        JSONObject obj1 = (JSONObject) obj.get("getUserGroups");
+                        //JSONObject obj1 = (JSONObject) obj.get("getUserGroups");
 
-                        jary = obj1.getJSONArray("getUserGroups");
+                        jary = obj.getJSONArray("getUserGroups");
                         groupNames.clear();
                         for (int i = 0; i < jary.length(); i++) {
                             groupNames.add(jary.getString(i));
@@ -169,7 +189,11 @@ public class GroupActivity extends Activity implements OnClickListener{
         new Thread(runnable).start();
         CreateGroup= (Button) findViewById(R.id.group);
         groupName = (EditText) findViewById(R.id.edttext1);
+        DeleteGroup = (ImageView) findViewById(R.id.deletegroupbtn1);
         CreateGroup.setOnClickListener(this);
+        //DeleteGroup.setOnClickListener(this);
+        
+        
     }
 
     protected void notifyDataChanged() {
@@ -179,12 +203,20 @@ public class GroupActivity extends Activity implements OnClickListener{
     @Override
     public void onClick(View view) {
         final String val = groupName.getText().toString();
+        Account account = AccountUtils.getCurrentOwnCloudAccount(this);
+        accountname = account.name;
+        String accountName[] = accountname.split("@");
+        if (accountName.length > 2)
+            username = accountName[0] + "@" + accountName[1];
+        else {
+            throw new NullPointerException("Account name not in correct format");
+        }
         if (val.equals("")) {
-            Toast.makeText(GroupActivity.this, "Please enter a friends name", Toast.LENGTH_LONG).show();
+            Toast.makeText(GroupActivity.this, "Please enter a group name", Toast.LENGTH_LONG).show();
         } else {
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-            params.add(new BasicNameValuePair("operation", username));
-            params.add(new BasicNameValuePair("UID", " "));
+            params.add(new BasicNameValuePair("operation",groupOperation.CREATE_GROUP.getGroupOperation()));
+            params.add(new BasicNameValuePair("UID", username));
             params.add(new BasicNameValuePair("GID", val));
 
             Runnable runnable = new Runnable() {
@@ -200,6 +232,11 @@ public class GroupActivity extends Activity implements OnClickListener{
                         Log.d(TAG, "Fetching friend list from server");
 
                         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                            HttpEntity entityresponse = response.getEntity();
+                            String jsonentity = EntityUtils.toString(entityresponse);
+                            JSONObject obj = new JSONObject(jsonentity);
+                            Boolean shareSuccess =obj.getBoolean("createGroup");
+                            if(shareSuccess == true) {
                             runOnUiThread(new Runnable() {
                                 public void run() {
                                     adapter.add(val);
@@ -208,6 +245,16 @@ public class GroupActivity extends Activity implements OnClickListener{
                                             "You have created " + val + " group", Toast.LENGTH_SHORT).show();
                                 }
                             });
+                            } else {
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        Toast.makeText(
+                                                GroupActivity.this,
+                                                "Sorry unable to create groups",
+                                                Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                            }
                         } else {
                             runOnUiThread(new Runnable() {
                                 public void run() {
@@ -222,6 +269,9 @@ public class GroupActivity extends Activity implements OnClickListener{
                         e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } catch (JSONException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
                     }
                 }
             };
@@ -229,57 +279,86 @@ public class GroupActivity extends Activity implements OnClickListener{
         }
     }
 
-    /*public void handler1(View v) {
-        final int position = groupListView.getPositionForView((View) v.getParent());
-        final String str = ((TextView) ((View) v.getParent()).findViewById(R.id.yourgrouptxt)).getText().toString();
-        Log.d("handler ", str);
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                HttpPost post = new HttpPost("http://" + url + "/owncloud/index.php/apps/friends/removefriendrequest");
-                HttpEntity entity;
+    public void deleteGroup(View view) {
+            
+    }
+   
+    public void onDeleteClick(View v){
+            final int position = groupListView.getPositionForView((View) v.getParent());
+            final String groupName = ((TextView) ((View) v.getParent()).findViewById(R.id.yourgrouptxt)).getText().toString();
+            final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair("operation", groupOperation.DELETE_GROUP.getGroupOperation()));
+            params.add(new BasicNameValuePair("UID", " "));
+            params.add(new BasicNameValuePair("GID", groupName));
 
-                final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-                params.add(new BasicNameValuePair("CURRENTUSER", username));
-                params.add(new BasicNameValuePair("SENTORRECEIVED", "sent"));
-                params.add(new BasicNameValuePair("FRIEND", str));
-                try {
-                    entity = new UrlEncodedFormEntity(params, "utf-8");
-                    HttpClient client = new DefaultHttpClient();
-                    post.setEntity(entity);
-                    HttpResponse response = client.execute(post);
-                    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    HttpPost post = new HttpPost("http://" + url + "/owncloud/androidcreategroups.php");
+                    HttpEntity entity;
+                    try {
+                        entity = new UrlEncodedFormEntity(params, "utf-8");
+                        HttpClient client = new DefaultHttpClient();
+                        post.setEntity(entity);
+                        HttpResponse response = client.execute(post);
+                        Log.d(TAG, "Deleting group");
 
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                String s = Integer.toString(position);
-                                adapter.remove(s);
-                                friendNames.remove(position);
-                                Log.d("rem ", s + " ");
-                                Toast.makeText(AddFriendsActivity.this, "You removed friend successfully",
-                                        Toast.LENGTH_SHORT).show();
+                        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                            HttpEntity entityresponse = response.getEntity();
+                            String jsonentity = EntityUtils.toString(entityresponse);
+                            JSONObject obj = new JSONObject(jsonentity);
+                            Boolean groupDelete = obj.getBoolean("deleteGroup");
+                            if(groupDelete == true) {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(GroupActivity.this,
+                                            "You have deleted " + groupName + " group", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            } else {
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        Toast.makeText(
+                                                GroupActivity.this,
+                                                "Sorry unable to delete group",
+                                                Toast.LENGTH_LONG).show();            
+
+                                    }
+                                });
                             }
-                        });
+                        } else {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(
+                                            GroupActivity.this,
+                                            "Sorry unable to delete group, check internet connection and try after sometime",
+                                            Toast.LENGTH_LONG).show();            
+
+                                }
+                            });
+                        }
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                        
+                    } catch (IOException e) { // TODO Auto-generated method stub
+                        
+                        e.printStackTrace();
+                    } catch (JSONException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
                     }
-                    else {
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                Toast.makeText(AddFriendsActivity.this,"Sorry unable to add friend, check internet connection and try after sometime",
-                                        Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        Log.d("in re", " could not remove");
-                    }
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-            }
-        };
-        new Thread(runnable).start();
-    }*/
-
+            };
+            new Thread(runnable).start();
+        
+            
+            
+        
+    }
+    
+    public void listUsers(View v) {
+        
+    }
     private class GroupArrayAdapter extends ArrayAdapter<String> {
 
         List<String> Objects;
@@ -295,15 +374,18 @@ public class GroupActivity extends Activity implements OnClickListener{
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
             View row = convertView;
             LayoutInflater inflater = ((Activity) context).getLayoutInflater();
             row = inflater.inflate(layoutResourceId, parent, false);
             holder = new friendRowholder();
             holder.frndPos = Objects.get(position);
-            holder.editgroupButton = (Button)findViewById(R.id.editgroupbtn1);
-            holder.deletegroupButton = (Button) findViewById(R.id.deletegroupbtn1);
+           // holder.editgroupButton = (Button)findViewById(R.id.editgroupbtn1);
+            holder.deletegroupButton = (ImageView) findViewById(R.id.deletegroupbtn1);
             holder.frndtxt = (TextView) row.findViewById(R.id.yourgrouptxt);
+            //DeleteGroup = (ImageView)findViewById(R.id.deletegroupbtn1);
+            
+            
             if (row.getTag() == null) {
                 row.setTag(holder);
                 String text = groupNames.get(position);
@@ -312,13 +394,25 @@ public class GroupActivity extends Activity implements OnClickListener{
             } else {
                 return null;
             }
+            
+           
+           
         }
         public class friendRowholder {
             String frndPos;
             TextView frndtxt;
-            Button editgroupButton;
-            Button deletegroupButton;
+            //Button editgroupButton;
+            ImageView deletegroupButton;
         }
     }
+    /*@Override
+    public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+        final String groupName = ((TextView) ((View) arg1.getParent()).findViewById(R.id.yourgrouptxt)).getText().toString();
+        Intent intent = new Intent(GroupActivity.this,ListAllUsersInGroup.class);
+        intent.putExtra("groupName", groupName);
+        startActivity(intent);        
+    } */
+    
+    
     
 }

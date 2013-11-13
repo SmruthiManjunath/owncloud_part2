@@ -237,7 +237,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         mAction = getIntent().getByteExtra(EXTRA_ACTION, ACTION_CREATE);
         mAccount = null;
         mHostBaseUrl = "";
-        location = locationSpinner.getSelectedItem();
+        location = " ";//locationSpinner.getSelectedItem();
         locationSpinner.setOnItemSelectedListener(this);
         boolean refreshButtonEnabled = false;
 
@@ -758,6 +758,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         // / get basic credentials entered by user
         String username = mUsernameInput.getText().toString();
         username = username + "@" + location;
+        Log.d("ueiqwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww ",username);
         String password = mPasswordInput.getText().toString();
 
         // / be gentle with the user
@@ -768,6 +769,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         WebdavClient client = OwnCloudClientUtils.createOwnCloudClient(Uri.parse(mHostBaseUrl + webdav_path), this,
                 true);
         client.setBasicCredentials(username, password);
+        Log.d("checking again ",username);
         mOperationThread = mAuthCheckOperation.execute(client, this, mHandler);
     }
 
@@ -1141,7 +1143,13 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             client.setBearerCredentials(mAuthToken);
             mAuthCheckOperation.execute(client, this, mHandler);
 
-        } else {
+        } else { 
+            if(!result.isSuccess()) {
+                Log.d("weiojrrrrrrrrrrrrrrrrrrrrrrr ",result.getLogMessage());
+            } 
+            if(webdav_path == null) {
+                Log.d("ieoiwrrrrrrrrrrrrrrrrrrrrrrr ","webdav path is null ");
+            }
             updateAuthStatusIconAndText(result);
             showAuthStatus();
             Log_OC.d(TAG, "Access failed: " + result.getLogMessage());
@@ -1235,7 +1243,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
         } else if (AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE.equals(mAuthTokenType)) {
             String username = getUserNameForSamlSso();
-            if (!mUsernameInput.getText().toString().equals(username)) {
+            
+            if (!(mUsernameInput.getText().toString()+"@"+location).equals(username)) {
                 // fail - not a new account, but an existing one; disallow
                 RemoteOperationResult result = new RemoteOperationResult(ResultCode.ACCOUNT_NOT_THE_SAME);
                 updateAuthStatusIconAndText(result);
@@ -1275,6 +1284,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
         Uri uri = Uri.parse(mHostBaseUrl);
         String username = mUsernameInput.getText().toString().trim();
+        username = username + "@" + location;
+
         Log.d("***********************************################## ", username);
         if (isSaml) {
             username = getUserNameForSamlSso();
@@ -1282,7 +1293,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         } else if (isOAuth) {
             username = "OAuth_user" + (new java.util.Random(System.currentTimeMillis())).nextLong();
         }
-        username = username + "@" + location;
         Log.d("***********************************################## ", username);
         String accountName = username + "@" + uri.getHost();
         // String accountName = username+"@"+location;
@@ -1339,6 +1349,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
              * if (!isOAuth) intent.putExtra(AccountManager.KEY_AUTHTOKEN,
              * AccountAuthenticator.ACCOUNT_TYPE);
              */
+            Log.d("eijwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq ",username);
             intent.putExtra(AccountManager.KEY_USERDATA, username);
             if (isOAuth || isSaml) {
                 mAccountMgr.setAuthToken(mAccount, mAuthTokenType, mAuthToken);

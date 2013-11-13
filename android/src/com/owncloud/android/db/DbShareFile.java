@@ -16,6 +16,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.owncloud.android.Log_OC;
 
@@ -67,7 +68,7 @@ public class DbShareFile {
         }
         for(int i = 0;i<sharedList.size();i++) {
             if(!presentInDatabase.contains(sharedList.get(i))) {
-                String[] shareObj = sharedList.get(i).split(" ");
+                String[] shareObj = sharedList.get(i).split(":");
                 if(shareObj.length > 1) {
                     cv.put("ownerId", shareObj[0]);
                     cv.put("sharedWith", accountName);

@@ -94,7 +94,6 @@ public class OCFile implements Parcelable, Comparable<OCFile> {
             Log_OC.d("ocfile details long ", longar[i]+" ");*/
        // Log_OC.d("OCFile ", source.readString());
         mId = source.readLong();
-        Log_OC.d("OCFIle file id",mId+" ");
         mParentId = source.readLong();
         mLength = source.readLong();
         mCreationTimestamp = source.readLong();

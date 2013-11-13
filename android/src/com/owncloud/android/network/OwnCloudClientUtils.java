@@ -106,6 +106,7 @@ public class OwnCloudClientUtils {
         } else {
             String username = account.name.substring(0, account.name.lastIndexOf('@'));
             //String password = am.getPassword(account);
+            Log_OC.d("OwnCloudClientutils getting username ",username);
             String password = am.blockingGetAuthToken(account, AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD, false);
             client.setBasicCredentials(username, password);
         }
@@ -125,6 +126,7 @@ public class OwnCloudClientUtils {
             AccountManagerFuture<Bundle> future =  am.getAuthToken(account, AccountAuthenticator.AUTH_TOKEN_TYPE_ACCESS_TOKEN, null, currentActivity, null, null);
             Bundle result = future.getResult();
             String accessToken = result.getString(AccountManager.KEY_AUTHTOKEN);
+            Log_OC.d("OwncloientUtils createowclouduser ","isOauth2");
             if (accessToken == null) throw new AuthenticatorException("WTF!");
             client.setBearerCredentials(accessToken);   // TODO not assume that the access token is a bearer token
 
@@ -132,6 +134,7 @@ public class OwnCloudClientUtils {
             AccountManagerFuture<Bundle> future =  am.getAuthToken(account, AccountAuthenticator.AUTH_TOKEN_TYPE_SAML_WEB_SSO_SESSION_COOKIE, null, currentActivity, null, null);
             Bundle result = future.getResult();
             String accessToken = result.getString(AccountManager.KEY_AUTHTOKEN);
+            Log_OC.d("OwncloientUtils createowclouduser "," in SamlSso");
             if (accessToken == null) throw new AuthenticatorException("WTF!");
             client.setSsoSessionCookie(accessToken);
 
@@ -139,6 +142,7 @@ public class OwnCloudClientUtils {
             String username = account.name.substring(0, account.name.lastIndexOf('@'));
             //String password = am.getPassword(account);
             //String password = am.blockingGetAuthToken(account, AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD, false);
+            Log_OC.d("OwncloientUtils createowclouduser ",username);
             AccountManagerFuture<Bundle> future =  am.getAuthToken(account, AccountAuthenticator.AUTH_TOKEN_TYPE_PASSWORD, null, currentActivity, null, null);
             Bundle result = future.getResult();
             String password = result.getString(AccountManager.KEY_AUTHTOKEN);

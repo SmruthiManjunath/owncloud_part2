@@ -229,7 +229,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             @Override
             public void onReceive(Context context, Intent intent) {
                 String message = intent.getStringExtra("message");
-                Log.d("receiver", "Got message: " + message);
                 instantDownloadFile();
                 // make the http request and update the ui to include the sharer
                 // information
@@ -575,7 +574,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
                 LayoutInflater factor = LayoutInflater.from(getApplicationContext());
                 final View deleteDialogView = factor.inflate(R.layout.enter_filename_dialog, null);
-                // alert.setContentView(R.layout.select_folder_dialog_spinner);
                 alert.setView(deleteDialogView);
                 final EditText edittext = (EditText) deleteDialogView.findViewById(R.id.filename);
 
@@ -585,7 +583,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         value = edittext.getText().toString();
-                        // String str = (String) spn.getSelectedItem();
                         Account account = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
 
                         // Log.d(TAG, "you entre "+str+" "+value);
@@ -614,7 +611,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                                 flag = 1;
                             }
                         } catch (IOException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         } finally {
                             if (flag == 1) {
@@ -622,7 +618,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                                 new displayFileTask(taskInput).execute();
                             }
                         }
-                        Log.d(TAG, "you entre " + value);
                     }
                 });
                 alert.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
@@ -640,50 +635,11 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
             break;
         }
         case R.id.action_friend: {
-            // Toast.makeText(getApplicationContext(), "Friend selec",
-            // Toast.LENGTH_SHORT).show();
-            // //No syncing
             Intent friendsIntent = new Intent(this, TabLayoutActivity.class);
             startActivity(friendsIntent);
             break;
         }
-        case R.id.action_share_file: {
-            /*
-             * Log.d(TAG,"here"); final String username = null;
-             * 
-             * 
-             * Account account = AccountUtils.getCurrentOwnCloudAccount(this);
-             * String accountName = account.name; String accountNames[] =
-             * accountName.split("@"); if (accountNames.length > 2) { username =
-             * accountNames[0] + "@" + accountNames[1]; url = accountNames[2]; }
-             * else { throw new
-             * NullPointerException("Account name not in correct format"); }
-             * 
-             * 
-             * Runnable runnable = new Runnable() {
-             * 
-             * @Override public void run() { HttpPost post = new
-             * HttpPost("http://" + url + "/owncloud/androidshare.php"); final
-             * ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-             * params.add(new BasicNameValuePair("itemType", "file"));
-             * params.add(new BasicNameValuePair("itemSource","7"));
-             * params.add(new BasicNameValuePair("shareType","0"));
-             * params.add(new BasicNameValuePair("shareWith","admin4@UCSB"));
-             * params.add(new BasicNameValuePair("permission","17"));
-             * params.add(new BasicNameValuePair("uidOwner",username));
-             * HttpEntity entity; try { entity = new
-             * UrlEncodedFormEntity(params, "utf-8"); HttpClient client = new
-             * DefaultHttpClient(); post.setEntity(entity); HttpResponse
-             * response = client.execute(post); Log.d(TAG,
-             * "Fetching friend list from server");
-             * 
-             * if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-             * { HttpEntity entityresponse = response.getEntity();
-             * Log.d(TAG,entityresponse.toString()); } }catch(Exception e) {
-             * e.printStackTrace(); } } }; new Thread(runnable).start();
-             */
-        }
-            break;
+        
         case R.id.action_group: {
             Intent groupIntent = new Intent(this, GroupActivity.class);
             startActivity(groupIntent);
@@ -705,7 +661,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        // Log.d(TAG,mDirectories.getCount()+" "+mDirectories.getItem(mDirectories.getCount()-1));
         if (mDirectories.equals("Shared")) {
             menu.removeItem(R.id.action_create_file);
             return true;
@@ -732,8 +687,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
 
         @Override
         protected Integer doInBackground(Void... arg0) {
-
-            Log.d("********************************** ", "background");
             return 1;
         }
 
@@ -821,7 +774,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                         sharerList = obj.getJSONArray("SHARER_LIST");
                         sharedFileList = new ArrayList<String>();
                         for (int i = 0; i < sharerList.length(); i++) {
-                            Log.d("FilelIstlist", sharerList.getString(i));
                             sharedFileList.add(sharerList.getString(i));
                         }
                         dataSourceShareFile = new DbShareFile(getBaseContext());

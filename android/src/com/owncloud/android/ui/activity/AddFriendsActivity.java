@@ -117,7 +117,6 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
                         friendNames.clear();
                         for (int i = 0; i < jary.length(); i++) {
                             friendNames.add(jary.getString(i));
-                            Log.d(TAG, jary.getString(i));
                         }
                         runOnUiThread(new Runnable() {
                             public void run() {
@@ -149,7 +148,6 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
                             }
                         });
 
-                        Log.d("Return", "unable to get data");
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -193,9 +191,14 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
                         HttpClient client = new DefaultHttpClient();
                         post.setEntity(entity);
                         HttpResponse response = client.execute(post);
-                        Log.d(TAG, "Fetching friend list from server");
 
                         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                            HttpEntity entityresponse = response.getEntity();
+                            String jsonentity = EntityUtils.toString(entityresponse);
+                            JSONObject obj = new JSONObject(jsonentity);
+                            
+                            Boolean jary = obj.getBoolean("success");
+                            if(jary) {
                             runOnUiThread(new Runnable() {
                                 public void run() {
                                     adapter.add(val);
@@ -204,6 +207,16 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
                                             "You requested " + val + " to add as friend", Toast.LENGTH_SHORT).show();
                                 }
                             });
+                            } else {
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        adapter.add(val);
+                                        friendName.setText("");
+                                        Toast.makeText(AddFriendsActivity.this,
+                                                "Unable to add " + val + " as a friend", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
                         } else {
                             runOnUiThread(new Runnable() {
                                 public void run() {
@@ -218,6 +231,8 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
                         e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                 }
             };
@@ -228,7 +243,6 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
     public void handler1(View v) {
         final int position = listView.getPositionForView((View) v.getParent());
         final String str = ((TextView) ((View) v.getParent()).findViewById(R.id.yourfrndtxt)).getText().toString();
-        Log.d("handler ", str);
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -245,30 +259,43 @@ public class AddFriendsActivity extends Activity implements OnClickListener, OnI
                     post.setEntity(entity);
                     HttpResponse response = client.execute(post);
                     if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-
+                        HttpEntity entityresponse = response.getEntity();
+                        String jsonentity = EntityUtils.toString(entityresponse);
+                        JSONObject obj = new JSONObject(jsonentity);
+                        
+                        Boolean jary = obj.getBoolean("success");
+                        if(jary) {
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 String s = Integer.toString(position);
                                 adapter.remove(s);
                                 friendNames.remove(position);
-                                Log.d("rem ", s + " ");
                                 Toast.makeText(AddFriendsActivity.this, "You removed friend successfully",
                                         Toast.LENGTH_SHORT).show();
                             }
                         });
-                    }
+                        } else {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(AddFriendsActivity.this, "Unable to remove friend, try again later.",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    } 
                     else {
                         runOnUiThread(new Runnable() {
                             public void run() {
-                                Toast.makeText(AddFriendsActivity.this,"Sorry unable to add friend, check internet connection and try after sometime",
+                                Toast.makeText(AddFriendsActivity.this,"Sorry unable to remove friend, check internet connection and try after sometime",
                                         Toast.LENGTH_LONG).show();
                             }
                         });
-                        Log.d("in re", " could not remove");
                     }
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }

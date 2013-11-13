@@ -70,7 +70,7 @@ public class YourFriendsActivity extends Activity {
         String[] url1 = (am.getUserData(account, AccountAuthenticator.KEY_OC_BASE_URL)).split("/");
         url = url1[2];
         String[] accountName = account.name.split("@");
-        String username = null;
+        //String username = null;
         if (accountName.length > 2) {
             username = accountName[0] + "@" + accountName[1];
         } else {
@@ -160,6 +160,7 @@ public class YourFriendsActivity extends Activity {
     public void handler1(View v) {
         final int position = listView.getPositionForView((View) v.getParent());
         final String str = ((TextView) ((View) v.getParent()).findViewById(R.id.yourfrndtxt)).getText().toString();
+        
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -175,7 +176,12 @@ public class YourFriendsActivity extends Activity {
                     post.setEntity(entity);
                     HttpResponse response = client.execute(post);
                     if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-
+                        HttpEntity entityresponse = response.getEntity();
+                        String jsonentity = EntityUtils.toString(entityresponse);
+                        JSONObject obj = new JSONObject(jsonentity);
+                        
+                        String jary = obj.getString("success");
+                        if(jary.equals("true")) {
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 String s = Integer.toString(position);
@@ -189,6 +195,27 @@ public class YourFriendsActivity extends Activity {
                             }
                         });
 
+                    } else if(jary.equals("false")) {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(YourFriendsActivity.this, "Could not remove friendship",
+                                        Toast.LENGTH_SHORT).show();
+                                adapter.notifyDataSetChanged();
+
+                            }
+                        });
+
+                    } else if(jary.equals("FRIENDSHIP_NOT_FOUND")) {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(YourFriendsActivity.this, "Unable to remove friendship. Invalid request.",
+                                        Toast.LENGTH_SHORT).show();
+                                adapter.notifyDataSetChanged();
+
+                            }
+                        });
+
+                    }
                     }
 
                     else {
@@ -200,6 +227,9 @@ public class YourFriendsActivity extends Activity {
                     e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (JSONException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
             }
         };
@@ -209,7 +239,6 @@ public class YourFriendsActivity extends Activity {
     private class friendlistArrayAdapter extends ArrayAdapter<String> {
 
         int i = 0;
-        // HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
         List<String> Objects;
         Context context;
         int layoutResourceId;

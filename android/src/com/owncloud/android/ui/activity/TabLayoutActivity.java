@@ -48,9 +48,10 @@ public class TabLayoutActivity extends TabActivity {
         spec3 = mTabHost.newTabSpec("AcceptFriendsRequests").setIndicator("Accept Friend Requests").setContent(intent);
         mTabHost.addTab(spec3);
 
-        intent = new Intent(this, FacebookSync.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        //uncomment the below lines to include facebook friend import
+        /*intent = new Intent(this, FacebookSync.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         spec4 = mTabHost.newTabSpec("Facebook").setIndicator("Facebook").setContent(intent);
-        mTabHost.addTab(spec4);
+        mTabHost.addTab(spec4); */
 
         // Adding Refresh and enabling back button
         android.app.ActionBar ab = getActionBar();

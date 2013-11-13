@@ -22,6 +22,8 @@ import android.accounts.*;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+
 import com.owncloud.android.Log_OC;
 
 /**
@@ -129,6 +131,7 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
     public Bundle confirmCredentials(AccountAuthenticatorResponse response,
             Account account, Bundle options) throws NetworkErrorException {
         try {
+            Log.d("AccountAuthenticator confirm credentials ",account.name);
             validateAccountType(account.type);
         } catch (AuthenticatorException e) {
             Log_OC.e(TAG, "Failed to validate account type " + account.type + ": "

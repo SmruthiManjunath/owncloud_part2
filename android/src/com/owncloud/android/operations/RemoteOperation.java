@@ -127,6 +127,7 @@ public abstract class RemoteOperation implements Runnable {
      * @return                  Thread were the remote operation is executed.
      */
     public final Thread execute(Account account, Context context, OnRemoteOperationListener listener, Handler listenerHandler, Activity callerActivity) {
+        Log_OC.d("in RemoteOperation ",account.name);
         if (account == null)
             throw new IllegalArgumentException("Trying to execute a remote operation with a NULL Account");
         if (context == null)
