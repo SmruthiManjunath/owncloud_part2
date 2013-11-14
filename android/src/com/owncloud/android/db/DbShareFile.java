@@ -34,6 +34,8 @@ public class DbShareFile {
     String[] fileSharedWith = {"sharedWith"};
     String[] filesSharer = {"ownerId,fileName"};
     String[] fileSharesPresent = {"ownerId","sharedWith","fileName"};
+    String[] filesSharedBeforeInsert = {"ownerId","sharedWith","filename","fileRemotePath"};
+    String[] filesSharedBeforeInsertList = {"ownerId","filename","sharedWith"};
 
     public DbShareFile(Context context) {
         mHelper = new OpenerHelper(context);
@@ -50,24 +52,31 @@ public class DbShareFile {
         cv.put("sharedWith", shareWithAccountId);
         cv.put("fileName", fileName);
         cv.put("fileRemotePath", fileRemotePath);
+        Set<String> presentInDatabase = new HashSet<String>();
+        Cursor cursor = mDB.query(TABLE_YOUR_SHARES, filesSharedBeforeInsert,null,null,null,null,null);
+        while (!cursor.isAfterLast()) {
+            if( (cursor.getString(0).equals(ownerAccountId) && cursor.getString(1).equals(shareWithAccountId) && cursor.getString(2).equals(fileName) && cursor.getString(3).equals(fileRemotePath)))
+                return false;
+            cursor.moveToNext();
+        }
         long result = mDB.insert(TABLE_YOUR_SHARES, null, cv);
-        Log_OC.d(TABLE_YOUR_SHARES, "putNewFriendRequest returns with: " + result + " for shares: " + fileName);
+        Log_OC.d(TABLE_YOUR_SHARES, "putNewShare returns with: " + result + " for shares: " + fileName);
         return result != -1;
     }
 
     public boolean putNewShareList(List<String> sharedList, String accountName) {
         ContentValues cv = new ContentValues();
         long result = -1;
-        Cursor cursor = mDB.query(TABLE_YOUR_SHARES, fileSharesPresent,null,null,null,null,null);
+        Cursor cursor = mDB.query(TABLE_YOUR_SHARES, filesSharedBeforeInsertList,null,null,null,null,null);
         cursor.moveToFirst();
         Set<String> presentInDatabase = new HashSet<String>();
         while (!cursor.isAfterLast()) {
-            if(cursor.getString(1).equals(accountName))
-                presentInDatabase.add(cursor.getString(0)+' '+cursor.getString(2));
+            if(cursor.getString(2).equals(accountName))
+                presentInDatabase.add(cursor.getString(0)+":"+cursor.getString(1)+":"+cursor.getString(2));
             cursor.moveToNext();
         }
         for(int i = 0;i<sharedList.size();i++) {
-            if(!presentInDatabase.contains(sharedList.get(i))) {
+            if(!presentInDatabase.contains(sharedList.get(i)+":"+accountName)) {
                 String[] shareObj = sharedList.get(i).split(":");
                 if(shareObj.length > 1) {
                     cv.put("ownerId", shareObj[0]);
@@ -75,7 +84,7 @@ public class DbShareFile {
                     cv.put("fileName", shareObj[1]);
                     cv.put("fileRemotePath", "/");
                     result = mDB.insert(TABLE_YOUR_SHARES, null, cv);
-                    Log_OC.d(TABLE_YOUR_SHARES, "putNewFriendRequest returns with: " + result + " for shares: " + shareObj[0]);
+                    Log_OC.d(TABLE_YOUR_SHARES, "putNewShareList returns with: " + result + " for shares: " + shareObj[0]);
                 }
             }
         }

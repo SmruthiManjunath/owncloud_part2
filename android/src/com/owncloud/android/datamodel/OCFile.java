@@ -83,16 +83,6 @@ public class OCFile implements Parcelable, Comparable<OCFile> {
      */
     private OCFile(Parcel source) {
         
-        //int[] intar = source.createIntArray();
-        //long[] longar = source.createLongArray();
-        
-       /* Log_OC.d("OCFile ", "printing int array "+intar.length);
-        for(int i = 0;i<intar.length;i++)
-            Log_OC.d("ocfile details ",intar[i]+" ");
-        Log_OC.d("OCFile ","printing long array"+longar.length);
-        for(int i = 0;i<longar.length;i++)
-            Log_OC.d("ocfile details long ", longar[i]+" ");*/
-       // Log_OC.d("OCFile ", source.readString());
         mId = source.readLong();
         mParentId = source.readLong();
         mLength = source.readLong();
@@ -106,8 +96,7 @@ public class OCFile implements Parcelable, Comparable<OCFile> {
         mKeepInSync = source.readInt() == 1;
         mLastSyncDateForProperties = source.readLong();
         mLastSyncDateForData = source.readLong();
-        //Log_OC.d("pathHash",source.readString());
-       // Log_OC.d("pathHash", source.readLong()+" ");
+        
         
 
     }

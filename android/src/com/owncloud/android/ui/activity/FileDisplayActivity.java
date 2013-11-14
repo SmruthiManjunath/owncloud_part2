@@ -577,7 +577,7 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                 alert.setView(deleteDialogView);
                 final EditText edittext = (EditText) deleteDialogView.findViewById(R.id.filename);
 
-                Log.d(TAG, getCurrentDir().getRemotePath());
+                //Log.d(TAG, getCurrentDir().getRemotePath());
                 alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 
                     @Override
@@ -599,7 +599,6 @@ public class FileDisplayActivity extends FileActivity implements OCFileListFragm
                                 + currentDir);
                         final File f1 = new File(Environment.getExternalStorageDirectory(), "ownCloud/" + account.name
                                 + currentDir + value);
-                        Log.d(TAG, f1.getName() + " " + f1.getPath());
                         try {
                             if (!f2.exists()) {
                                 f2.mkdirs();

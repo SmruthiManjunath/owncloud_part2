@@ -758,7 +758,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         // / get basic credentials entered by user
         String username = mUsernameInput.getText().toString();
         username = username + "@" + location;
-        Log.d("ueiqwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww ",username);
         String password = mPasswordInput.getText().toString();
 
         // / be gentle with the user
@@ -1286,23 +1285,18 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         String username = mUsernameInput.getText().toString().trim();
         username = username + "@" + location;
 
-        Log.d("***********************************################## ", username);
         if (isSaml) {
             username = getUserNameForSamlSso();
 
         } else if (isOAuth) {
             username = "OAuth_user" + (new java.util.Random(System.currentTimeMillis())).nextLong();
         }
-        Log.d("***********************************################## ", username);
         String accountName = username + "@" + uri.getHost();
-        // String accountName = username+"@"+location;
         if (uri.getPort() >= 0) {
             accountName += ":" + uri.getPort();
         }
 
-        // String username = (username_text.getText().toString().trim());
-        // String accountName = username + "@" + url.getHost();
-
+       
         mAccount = new Account(accountName, AccountAuthenticator.ACCOUNT_TYPE);
         if (AccountUtils.exists(mAccount, getApplicationContext())) {
             // fail - not a new account, but an existing one; disallow
@@ -1349,7 +1343,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
              * if (!isOAuth) intent.putExtra(AccountManager.KEY_AUTHTOKEN,
              * AccountAuthenticator.ACCOUNT_TYPE);
              */
-            Log.d("eijwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq ",username);
             intent.putExtra(AccountManager.KEY_USERDATA, username);
             if (isOAuth || isSaml) {
                 mAccountMgr.setAuthToken(mAccount, mAuthTokenType, mAuthToken);
@@ -1557,7 +1550,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                             HttpEntity entityresponse = response.getEntity();
                             String jsonentity = EntityUtils.toString(entityresponse);
                             final JSONObject jsonObject = new JSONObject(jsonentity);
-                            //JSONObject responseReceived = (JSONOjsonObject.get("reply");
 
                             String registerUserReply = jsonObject.getString("reply");
                             
@@ -1568,7 +1560,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                                     public void run() {
                                         if(!location_returned.equals(location)) {
                                             Log.d("location returned ",location_returned);
-                                        Toast.makeText(getApplicationContext(), "Account created and your login id is"+location_returned, Toast.LENGTH_LONG)
+                                        Toast.makeText(getApplicationContext(), "Account created and your login id is "+location_returned, Toast.LENGTH_LONG)
                                                 .show();
                                         }
 

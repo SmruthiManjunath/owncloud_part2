@@ -107,7 +107,7 @@ public class DisplayFilesOfflineActivity extends Activity {
                
                 int start = owncloudDirectory.getPath().indexOf("ownCloud");
                 String Path = "file:///sdcard/" + owncloudDirectory.getPath().substring(start) + "/" + fileName;
-                Log.d(TAG, Path);
+                //Log.d(TAG, Path);
                 String type = null;
                 if (Extension.equals("jpeg") || Extension.equals("bmp") || Extension.equals("gif")
                         || Extension.equals("jpg") || Extension.equals("png")) {
