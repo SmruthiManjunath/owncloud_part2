@@ -54,10 +54,12 @@ public class DbShareFile {
         cv.put("fileRemotePath", fileRemotePath);
         Set<String> presentInDatabase = new HashSet<String>();
         Cursor cursor = mDB.query(TABLE_YOUR_SHARES, filesSharedBeforeInsert,null,null,null,null,null);
+        if(cursor.moveToFirst()) {
         while (!cursor.isAfterLast()) {
             if( (cursor.getString(0).equals(ownerAccountId) && cursor.getString(1).equals(shareWithAccountId) && cursor.getString(2).equals(fileName) && cursor.getString(3).equals(fileRemotePath)))
                 return false;
             cursor.moveToNext();
+        }
         }
         long result = mDB.insert(TABLE_YOUR_SHARES, null, cv);
         Log_OC.d(TABLE_YOUR_SHARES, "putNewShare returns with: " + result + " for shares: " + fileName);
